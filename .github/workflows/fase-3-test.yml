@@ -1,0 +1,131 @@
+name: Fase 3 Master Data Test
+
+on:
+  push:
+    branches:
+      - fase-3-master-data
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-fase-3:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sistem_informasi_toko_bangunan
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php scripts/salin-aset-template.php
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=sistem_informasi_toko_bangunan/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Backup empty development database before migration
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-3.sql
+
+      - name: Run patent schema migration
+        run: php artisan migrate --force
+
+      - name: Add explicit branch data
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan <<'SQL'
+          INSERT INTO cabang (kode_cabang, nama_cabang, alamat, status_aktif)
+          VALUES ('CAB-UJI', 'Cabang Pengujian', 'Alamat Pengujian', 1);
+          SQL
+
+      - name: Prepare Phase 2 and Phase 3 administrator fixtures
+        run: |
+          php artisan fase2:siapkan \
+            --nama-pengguna=admin_fase2 \
+            --kata-sandi='AdminFase2!2026' \
+            --nama-tampilan='Administrator Fase 2'
+          php artisan fase2:siapkan \
+            --nama-pengguna=admin_fase3 \
+            --kata-sandi='AdminFase3!2026' \
+            --nama-tampilan='Administrator Fase 3'
+
+      - name: Backup baseline before Phase 3 seed and tests
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-data-fase-3.sql
+
+      - name: Upload pre-change backups
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-sebelum-testing-fase-3
+          path: |
+            backup-sebelum-migrasi-fase-3.sql
+            backup-sebelum-data-fase-3.sql
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Prepare Phase 3 permissions and initial data
+        run: php artisan fase3:siapkan
+
+      - name: Assert patent schema and initial data
+        run: |
+          BASE_TABLES="$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='BASE TABLE';")"
+          VIEWS="$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")"
+          test "$BASE_TABLES" = "71"
+          test "$VIEWS" = "3"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_NAME IN ('sessions','cache','jobs','job_batches','failed_jobs','password_reset_tokens');")" = "0"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "29"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM jenis_pelanggan WHERE kode_jenis_pelanggan IN ('UMUM','TUKANG','KONTRAKTOR_PROYEK','TOKO_RESELLER') AND deleted_at IS NULL;")" = "4"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM pelanggan WHERE kode_pelanggan='UMUM' AND nama_pelanggan='PELANGGAN TUNAI' AND deleted_at IS NULL;")" = "1"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM tarif_pajak WHERE kode_tarif_pajak='NON_PAJAK' AND persen_pajak=0 AND deleted_at IS NULL;")" = "1"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM gudang WHERE kode_gudang IN ('RUSAK','RETUR') AND id_cabang=(SELECT id_cabang FROM cabang WHERE kode_cabang='CAB-UJI') AND deleted_at IS NULL;")" = "2"
+
+      - name: Verify schema against final SQL
+        run: php artisan skema:verifikasi --rinci
+
+      - name: Run Phase 3 integration tests
+        env:
+          FASE3_INTEGRATION: true
+        run: php artisan test --filter=FaseTigaMasterDataTest
+
+      - name: Run Phase 2 regression tests
+        env:
+          FASE2_INTEGRATION: true
+        run: php artisan test --filter=FaseDuaAutentikasiTest
+
+      - name: Run complete regression suite
+        run: php artisan test
