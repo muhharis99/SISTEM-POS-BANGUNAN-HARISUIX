@@ -61,7 +61,24 @@ jobs:
           vendor/bin/pint --test
 
       - name: Run patent schema migration
-        run: php artisan migrate --force
+        id: migration
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          php artisan migrate --force 2>&1 | tee laporan-migration-fase-2.txt
+
+      - name: Upload migration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-migration-fase-2
+          path: laporan-migration-fase-2.txt
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Stop when migration failed
+        if: steps.migration.outcome == 'failure'
+        run: exit 1
 
       - name: Add explicit test branch data
         run: |
@@ -95,4 +112,4 @@ jobs:
         run: php artisan test --filter=FaseDuaAutentikasiTest
 
       - name: Run regression tests
-        run: php artisan test --exclude-group=none
+        run: php artisan test
