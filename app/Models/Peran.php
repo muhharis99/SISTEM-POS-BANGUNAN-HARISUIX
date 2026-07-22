@@ -19,7 +19,9 @@ class Peran extends Model
 
     public function scopeAktif(Builder $query): Builder
     {
-        return $query->where('status_aktif', 1)->whereNull('deleted_at');
+        return $query
+            ->where('peran.status_aktif', 1)
+            ->whereNull('peran.deleted_at');
     }
 
     public function hakAkses(): BelongsToMany
