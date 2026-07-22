@@ -7,16 +7,23 @@ on:
     paths:
       - '.github/workflows/terapkan-fase-4-sekali.yml'
       - '.fase4-paket/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/terapkan-fase-4-sekali.yml'
+      - '.fase4-paket/**'
 
 permissions:
   contents: write
 
 concurrency:
   group: terapkan-fase-4-sekali
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   terapkan:
+    if: github.event_name == 'pull_request' && github.head_ref == 'fase-4-persediaan'
     runs-on: ubuntu-latest
 
     steps:
@@ -71,6 +78,8 @@ jobs:
           set -euo pipefail
           rm -rf .fase4-paket
           rm .github/workflows/terapkan-fase-4-sekali.yml
+          rm .github/workflows/ekstrak-paket-fase-4.yml
+          git checkout origin/main -- .github/workflows/fase-3-test.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
