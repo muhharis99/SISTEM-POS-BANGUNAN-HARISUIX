@@ -30,6 +30,7 @@ class Pengguna extends Authenticatable
         'terakhir_masuk',
         'percobaan_masuk',
         'dikunci_sampai',
+        'created_at',
         'created_by',
         'updated_at',
         'updated_by',
@@ -47,6 +48,7 @@ class Pengguna extends Authenticatable
             'status_aktif' => 'boolean',
             'terakhir_masuk' => 'datetime',
             'dikunci_sampai' => 'datetime',
+            'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
