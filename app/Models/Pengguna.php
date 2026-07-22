@@ -72,7 +72,7 @@ class Pengguna extends Authenticatable
     public function penugasanPeran(): HasMany
     {
         return $this->hasMany(PenggunaPeran::class, 'id_pengguna', 'id_pengguna')
-            ->whereNull('deleted_at');
+            ->whereNull('pengguna_peran.deleted_at');
     }
 
     public function peran(): BelongsToMany
@@ -102,20 +102,22 @@ class Pengguna extends Authenticatable
     public function scopeAktif(Builder $query): Builder
     {
         return $query
-            ->where('status_aktif', 1)
-            ->whereNull('deleted_at');
+            ->where('pengguna.status_aktif', 1)
+            ->whereNull('pengguna.deleted_at');
     }
 
     public function memilikiPeran(string $kodePeran, ?int $idCabang = null): bool
     {
         return $this->penugasanPeran()
             ->whereHas('peran', fn (Builder $query) => $query
-                ->where('kode_peran', $kodePeran)
-                ->where('status_aktif', 1)
-                ->whereNull('deleted_at'))
+                ->where('peran.kode_peran', $kodePeran)
+                ->where('peran.status_aktif', 1)
+                ->whereNull('peran.deleted_at'))
             ->when($idCabang !== null, fn (Builder $query) => $query
                 ->where(function (Builder $cabang) use ($idCabang): void {
-                    $cabang->whereNull('id_cabang')->orWhere('id_cabang', $idCabang);
+                    $cabang
+                        ->whereNull('pengguna_peran.id_cabang')
+                        ->orWhere('pengguna_peran.id_cabang', $idCabang);
                 }))
             ->exists();
     }
@@ -129,14 +131,16 @@ class Pengguna extends Authenticatable
         return $this->penugasanPeran()
             ->when($idCabang !== null, fn (Builder $query) => $query
                 ->where(function (Builder $cabang) use ($idCabang): void {
-                    $cabang->whereNull('id_cabang')->orWhere('id_cabang', $idCabang);
+                    $cabang
+                        ->whereNull('pengguna_peran.id_cabang')
+                        ->orWhere('pengguna_peran.id_cabang', $idCabang);
                 }))
             ->whereHas('peran', fn (Builder $query) => $query
-                ->where('status_aktif', 1)
-                ->whereNull('deleted_at')
+                ->where('peran.status_aktif', 1)
+                ->whereNull('peran.deleted_at')
                 ->whereHas('hakAkses', fn (Builder $hakAkses) => $hakAkses
-                    ->where('kode_hak_akses', $kodeHakAkses)
-                    ->where('status_aktif', 1)
+                    ->where('hak_akses.kode_hak_akses', $kodeHakAkses)
+                    ->where('hak_akses.status_aktif', 1)
                     ->whereNull('hak_akses.deleted_at')))
             ->exists();
     }
