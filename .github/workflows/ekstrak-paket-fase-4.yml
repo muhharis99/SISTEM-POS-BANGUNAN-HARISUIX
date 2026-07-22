@@ -1,9 +1,9 @@
 name: Ekstrak Paket Fase 4
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - fase-4-persediaan
     paths:
       - '.github/workflows/ekstrak-paket-fase-4.yml'
       - '.fase4-paket/**'
@@ -13,11 +13,10 @@ permissions:
 
 concurrency:
   group: terapkan-paket-fase-4
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   ekstrak:
-    if: github.head_ref == 'fase-4-persediaan'
     runs-on: ubuntu-latest
 
     steps:
