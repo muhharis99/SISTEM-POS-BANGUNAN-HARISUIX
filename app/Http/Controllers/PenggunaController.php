@@ -141,16 +141,45 @@ class PenggunaController extends Controller
 
     private function simpanPenugasan(Pengguna $pengguna, array $penugasan, int $pelaku): void
     {
+        $unik = collect($penugasan)
+            ->map(fn (array $item): array => [
+                'id_peran' => (int) $item['id_peran'],
+                'id_cabang' => isset($item['id_cabang']) && $item['id_cabang'] !== '' ? (int) $item['id_cabang'] : null,
+            ])
+            ->unique(fn (array $item): string => $item['id_peran'].'|'.($item['id_cabang'] ?? 'NULL'))
+            ->values();
+
         PenggunaPeran::query()
             ->where('id_pengguna', $pengguna->id_pengguna)
             ->whereNull('deleted_at')
             ->update(['deleted_at' => now(), 'deleted_by' => $pelaku]);
 
-        foreach ($penugasan as $item) {
+        foreach ($unik as $item) {
+            $query = PenggunaPeran::query()
+                ->where('id_pengguna', $pengguna->id_pengguna)
+                ->where('id_peran', $item['id_peran']);
+
+            $item['id_cabang'] === null
+                ? $query->whereNull('id_cabang')
+                : $query->where('id_cabang', $item['id_cabang']);
+
+            $penugasanLama = $query->first();
+
+            if ($penugasanLama) {
+                $penugasanLama->forceFill([
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                    'created_at' => now(),
+                    'created_by' => $pelaku,
+                ])->save();
+
+                continue;
+            }
+
             PenggunaPeran::query()->create([
                 'id_pengguna' => $pengguna->id_pengguna,
                 'id_peran' => $item['id_peran'],
-                'id_cabang' => $item['id_cabang'] ?? null,
+                'id_cabang' => $item['id_cabang'],
                 'created_at' => now(),
                 'created_by' => $pelaku,
             ]);
