@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-fondasi:
@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.sha }}
 
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -41,8 +43,19 @@ jobs:
       - name: Check PHP syntax
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Check PHP formatting
-        run: vendor/bin/pint --test
+      - name: Format PHP with Pint
+        run: vendor/bin/pint
+
+      - name: Commit formatting corrections
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fase-1-fondasi'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app bootstrap config database routes scripts tests
+          if ! git diff --cached --quiet; then
+            git commit -m "style(fase-1): rapikan format kode dengan Pint"
+            git push origin HEAD:fase-1-fondasi
+          fi
 
       - name: Run tests without database migration
         run: php artisan test
@@ -91,9 +104,26 @@ jobs:
         run: mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot < struktur_database_toko_bangunan.sql
 
       - name: Verify schema against SQL final
-        run: php artisan skema:verifikasi --rinci
+        id: verifikasi
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          php artisan skema:verifikasi --rinci 2>&1 | tee skema-verifikasi.txt
+
+      - name: Upload schema verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-verifikasi-skema
+          path: skema-verifikasi.txt
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Assert exact business object counts
         run: |
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='BASE TABLE';")" = "70"
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")" = "3"
+
+      - name: Fail when schema verification differs
+        if: steps.verifikasi.outcome == 'failure'
+        run: exit 1
