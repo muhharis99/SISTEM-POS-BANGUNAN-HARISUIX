@@ -1,0 +1,175 @@
+name: Investigasi Font UBold
+
+on:
+  push:
+    branches:
+      - fase-1-fondasi
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  investigasi-font:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application and copy locked UBold assets
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php scripts/salin-aset-template.php
+
+      - name: Build static inspection report
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          css_path = Path('public/assets/admin/css/app.min.css')
+          css = css_path.read_text(encoding='utf-8-sig')
+          imports = re.findall(r'@import\s+url\(([^)]+)\)', css, flags=re.I)
+          families = sorted(set(re.findall(r'(?:font-family|--[\w-]*font[\w-]*family)\s*:\s*([^;}]+)', css, flags=re.I)))
+          candidates = sorted(str(p) for p in Path('.').rglob('css2*') if p.is_file() and '.git/' not in str(p))
+
+          with open('laporan-font-ubold.txt', 'w', encoding='utf-8') as report:
+              report.write('INVESTIGASI FONT UBOLD\n')
+              report.write('======================\n\n')
+              report.write('File CSS runtime: public/assets/admin/css/app.min.css\n\n')
+              report.write('Daftar @import pada app.min.css:\n')
+              for item in imports:
+                  report.write(f'- {item}\n')
+              report.write('\nKandidat file css2* yang benar-benar ada di repository/runtime:\n')
+              if candidates:
+                  for item in candidates:
+                      report.write(f'- {item}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+              report.write('\nDeklarasi font-family yang ditemukan dalam app.min.css:\n')
+              for item in families:
+                  report.write(f'- {item.strip()}\n')
+          PY
+
+      - name: Start Laravel development server
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > laravel-server.log 2>&1 &
+          echo $! > laravel-server.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/dashboard >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat laravel-server.log
+          exit 1
+
+      - name: Capture browser network log
+        run: |
+          BROWSER=""
+          for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$BROWSER" ]; then
+            echo "Browser Chromium/Chrome tidak tersedia pada runner." | tee -a laporan-font-ubold.txt
+            exit 1
+          fi
+
+          echo "Browser yang digunakan: $BROWSER" | tee -a laporan-font-ubold.txt
+
+          "$BROWSER" \
+            --headless \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --disable-gpu \
+            --run-all-compositor-stages-before-draw \
+            --virtual-time-budget=8000 \
+            --log-net-log=font-netlog.json \
+            --net-log-capture-mode=Everything \
+            http://127.0.0.1:8000/dashboard \
+            > browser-output.log 2>&1 || true
+
+      - name: Analyse captured network requests and HTTP status
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          from urllib.parse import urljoin
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
+
+          base = 'http://127.0.0.1:8000/assets/admin/css/app.min.css'
+          css = Path('public/assets/admin/css/app.min.css').read_text(encoding='utf-8-sig')
+          imports = re.findall(r'@import\s+url\(([^)]+)\)', css, flags=re.I)
+          resolved = [urljoin(base, item.strip('"\'')) for item in imports]
+
+          netlog_text = Path('font-netlog.json').read_text(encoding='utf-8', errors='replace') if Path('font-netlog.json').exists() else ''
+          urls = sorted(set(re.findall(r'https?://[^"\\\s]+', netlog_text)))
+          relevant = [u for u in urls if ('css2' in u.lower() or 'fonts.googleapis.com' in u.lower() or 'fonts.gstatic.com' in u.lower())]
+
+          with open('laporan-font-ubold.txt', 'a', encoding='utf-8') as report:
+              report.write('\n\nResolusi URL oleh aturan URL browser:\n')
+              for url in resolved:
+                  report.write(f'- {url}\n')
+
+              report.write('\nStatus HTTP untuk setiap URL hasil resolusi:\n')
+              for url in sorted(set(resolved)):
+                  try:
+                      req = Request(url, method='GET', headers={'User-Agent': 'Mozilla/5.0'})
+                      with urlopen(req, timeout=10) as response:
+                          report.write(f'- {response.status} {url}\n')
+                  except HTTPError as exc:
+                      report.write(f'- {exc.code} {url}\n')
+                  except URLError as exc:
+                      report.write(f'- ERROR {url} ({exc.reason})\n')
+
+              report.write('\nRequest relevan yang benar-benar tercatat pada Chrome NetLog:\n')
+              if relevant:
+                  for url in relevant:
+                      report.write(f'- {url}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+
+              external = [u for u in relevant if not u.startswith('http://127.0.0.1:8000/')]
+              report.write('\nRequest eksternal font yang tercatat:\n')
+              if external:
+                  for url in external:
+                      report.write(f'- {url}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+          PY
+
+          kill "$(cat laravel-server.pid)" || true
+          cat laporan-font-ubold.txt
+
+      - name: Upload investigation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-investigasi-font-ubold
+          path: |
+            laporan-font-ubold.txt
+            font-netlog.json
+            browser-output.log
+            laravel-server.log
+          retention-days: 7
+          if-no-files-found: warn
