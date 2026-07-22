@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->redirectGuestsTo('/masuk');
         $middleware->alias([
             'cabang.aktif' => PastikanCabangAktif::class,
             'hak.akses' => PastikanHakAkses::class,
