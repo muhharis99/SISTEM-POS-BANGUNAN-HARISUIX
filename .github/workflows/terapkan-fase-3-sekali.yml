@@ -1,0 +1,63 @@
+name: Terapkan Implementasi Fase 3 Sekali
+
+on:
+  push:
+    branches:
+      - fase-3-master-data
+    paths:
+      - '.github/workflows/terapkan-fase-3-sekali.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  terapkan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch Fase 3
+        uses: actions/checkout@v4
+        with:
+          ref: fase-3-master-data
+          fetch-depth: 0
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Verifikasi dan terapkan paket
+        run: |
+          set -euo pipefail
+          cat .fase3-payload/part* > /tmp/fase3-payload.b64
+          base64 --decode /tmp/fase3-payload.b64 > /tmp/fase3-payload.tar.gz
+          echo 'b3516a86ef0a62e6fe04a650ef459004f560627781aa5dc57d18ddf3691fc0d0  /tmp/fase3-payload.tar.gz' | sha256sum --check --strict
+          tar -xzf /tmp/fase3-payload.tar.gz -C .
+          find app bootstrap config database routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+          vendor/bin/pint app bootstrap config database routes tests
+
+      - name: Hapus jalur penerapan sementara
+        run: |
+          rm -rf .fase3-payload
+          rm -f .github/workflows/terapkan-fase-3-sekali.yml
+
+      - name: Commit implementasi ke branch Fase 3
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo 'Tidak ada perubahan yang perlu di-commit.'
+            exit 0
+          fi
+
+          git commit -m 'feat(fase-3): implementasikan master data dan daftar harga'
+          git push origin HEAD:fase-3-master-data
