@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-fondasi:
@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.sha }}
 
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -31,6 +33,17 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Commit resolved Composer lock
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fase-1-fondasi'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add composer.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(fase-1): kunci dependency composer"
+            git push origin HEAD:fase-1-fondasi
+          fi
 
       - name: Upload resolved Composer lock
         uses: actions/upload-artifact@v4
