@@ -34,6 +34,7 @@ foreach ($iterator as $item) {
             fwrite(STDERR, "Gagal membuat folder: {$pathTujuan}\n");
             exit(1);
         }
+
         continue;
     }
 

@@ -143,8 +143,8 @@ class VerifikasiSkemaDatabase extends Command
     }
 
     /**
-     * @param array<int, string> $diharapkan
-     * @param array<int, string> $aktual
+     * @param  array<int, string>  $diharapkan
+     * @param  array<int, string>  $aktual
      */
     private function bandingkanNamaObjek(string $jenis, array $diharapkan, array $aktual): void
     {
@@ -257,6 +257,7 @@ class VerifikasiSkemaDatabase extends Command
         foreach ($expected as $namaIndex => $aturan) {
             if (! isset($actual[$namaIndex])) {
                 $this->kesalahan[] = "Index {$namaTabel}.{$namaIndex} tidak ditemukan.";
+
                 continue;
             }
 
@@ -276,16 +277,19 @@ class VerifikasiSkemaDatabase extends Command
                 preg_match('/^`?([A-Za-z0-9_]+)`?\s+.+\bPRIMARY\s+KEY\b/i', $baris, $inline) === 1
             ) {
                 $hasil['PRIMARY'] = ['unik' => true, 'kolom' => [$inline[1]]];
+
                 continue;
             }
 
             if (preg_match('/^PRIMARY\s+KEY\s*\(([^)]+)\)/i', $baris, $cocok) === 1) {
                 $hasil['PRIMARY'] = ['unik' => true, 'kolom' => $this->parseKolomIndex($cocok[1])];
+
                 continue;
             }
 
             if (preg_match('/^UNIQUE\s+KEY\s+`?([A-Za-z0-9_]+)`?\s*\(([^)]+)\)/i', $baris, $cocok) === 1) {
                 $hasil[$cocok[1]] = ['unik' => true, 'kolom' => $this->parseKolomIndex($cocok[2])];
+
                 continue;
             }
 

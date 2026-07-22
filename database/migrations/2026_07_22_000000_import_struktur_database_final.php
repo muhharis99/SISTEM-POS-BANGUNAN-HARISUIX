@@ -129,6 +129,7 @@ return new class extends Migration
                     $komentarBaris = false;
                     $buffer .= "\n";
                 }
+
                 continue;
             }
 
@@ -137,6 +138,7 @@ return new class extends Migration
                     $komentarBlok = false;
                     $i++;
                 }
+
                 continue;
             }
 
@@ -144,17 +146,20 @@ return new class extends Migration
                 if ($karakter === '-' && $berikutnya === '-') {
                     $komentarBaris = true;
                     $i++;
+
                     continue;
                 }
 
                 if ($karakter === '#') {
                     $komentarBaris = true;
+
                     continue;
                 }
 
                 if ($karakter === '/' && $berikutnya === '*') {
                     $komentarBlok = true;
                     $i++;
+
                     continue;
                 }
             }
@@ -182,6 +187,7 @@ return new class extends Migration
                 }
 
                 $buffer = '';
+
                 continue;
             }
 

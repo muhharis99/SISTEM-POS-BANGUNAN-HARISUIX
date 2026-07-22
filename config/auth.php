@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Pengguna;
+
 return [
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
@@ -16,7 +18,7 @@ return [
     'providers' => [
         'pengguna' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\Pengguna::class),
+            'model' => env('AUTH_MODEL', Pengguna::class),
         ],
     ],
 
