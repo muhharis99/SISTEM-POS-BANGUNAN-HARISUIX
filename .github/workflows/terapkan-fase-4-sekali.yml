@@ -73,20 +73,22 @@ jobs:
       - name: Periksa sintaks PHP
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Commit implementasi ke branch Fase 4
+      - name: Siapkan perubahan Git
         run: |
           set -euo pipefail
           rm -rf .fase4-paket
           rm .github/workflows/terapkan-fase-4-sekali.yml
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-
+          git status --short
           if git diff --cached --quiet; then
             echo 'Tidak ada perubahan hasil ekstraksi.' >&2
             exit 1
           fi
 
-          git commit -m "feat(fase4): implementasi persediaan dan mutasi stok"
-          git push origin HEAD:fase-4-persediaan
+      - name: Buat commit implementasi Fase 4
+        run: git commit -m "feat(fase4): implementasi persediaan dan mutasi stok"
+
+      - name: Kirim commit ke branch Fase 4
+        run: git push origin HEAD:fase-4-persediaan
