@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 return new class extends Migration
 {
@@ -24,9 +25,29 @@ return new class extends Migration
             $namaDatabase
         ));
 
-        foreach ($this->pisahkanPernyataanSql($this->hapusPerintahLingkungan($sql)) as $pernyataan) {
-            if (trim($pernyataan) !== '') {
+        $daftarPernyataan = $this->pisahkanPernyataanSql($this->hapusPerintahLingkungan($sql));
+
+        foreach ($daftarPernyataan as $indeks => $pernyataan) {
+            if (trim($pernyataan) === '') {
+                continue;
+            }
+
+            try {
                 DB::unprepared($pernyataan);
+            } catch (Throwable $exception) {
+                $ringkas = preg_replace('/\s+/', ' ', trim($pernyataan)) ?? trim($pernyataan);
+                $ringkas = mb_substr($ringkas, 0, 500);
+
+                throw new RuntimeException(
+                    sprintf(
+                        'Gagal menjalankan statement SQL final nomor %d dari %d: %s. Penyebab: %s',
+                        $indeks + 1,
+                        count($daftarPernyataan),
+                        $ringkas,
+                        $exception->getMessage()
+                    ),
+                    previous: $exception
+                );
             }
         }
     }
