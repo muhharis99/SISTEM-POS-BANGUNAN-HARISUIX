@@ -1,0 +1,129 @@
+name: Verifikasi Paket Font UBold
+
+on:
+  push:
+    branches:
+      - fase-1-fondasi
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifikasi-paket-font:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Periksa seluruh paket template dan CSS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('template_admin')
+          css_path = root / 'assets/css/app.min.css'
+
+          if not root.is_dir():
+              raise SystemExit('Folder template_admin tidak ditemukan.')
+          if not css_path.is_file():
+              raise SystemExit('app.min.css tidak ditemukan.')
+
+          semua_file = sorted(path for path in root.rglob('*') if path.is_file())
+          css2_files = sorted(
+              path for path in semua_file
+              if re.fullmatch(r'css2(?:-\d+)?', path.name, flags=re.I)
+          )
+          font_files = sorted(
+              path for path in semua_file
+              if path.suffix.lower() in {'.woff', '.woff2', '.ttf', '.otf', '.eot'}
+          )
+
+          css = css_path.read_text(encoding='utf-8-sig', errors='replace')
+          imports = re.findall(r'@import\s+url\(([^)]+)\)', css, flags=re.I)
+          weights = sorted(set(
+              value.strip()
+              for value in re.findall(r'font-weight\s*:\s*([^;{}]+)', css, flags=re.I)
+          ))
+          styles = sorted(set(
+              value.strip()
+              for value in re.findall(r'font-style\s*:\s*([^;{}]+)', css, flags=re.I)
+          ))
+          weight_vars = sorted(set(
+              f'{name}: {value.strip()}'
+              for name, value in re.findall(
+                  r'(--[^:;{}]*font-weight[^:;{}]*):\s*([^;{}]+)',
+                  css,
+                  flags=re.I,
+              )
+          ))
+          families = sorted(set(
+              value.strip()
+              for value in re.findall(r'font-family\s*:\s*([^;{}]+)', css, flags=re.I)
+          ))
+
+          theme_chain = []
+          for variable in ('--theme-font-sans-serif', '--theme-body-font-family'):
+              match = re.search(rf'{re.escape(variable)}\s*:\s*([^;}}]+)', css, flags=re.I)
+              if match:
+                  theme_chain.append(f'{variable}: {match.group(1).strip()}')
+
+          with open('laporan-verifikasi-paket-font-ubold.txt', 'w', encoding='utf-8') as report:
+              report.write('VERIFIKASI PAKET ASLI FONT UBOLD\n')
+              report.write('================================\n\n')
+              report.write(f'Root yang dipindai: {root}\n')
+              report.write(f'Total file dalam template_admin: {len(semua_file)}\n\n')
+
+              report.write('File css2* di seluruh template_admin (root dan semua subfolder):\n')
+              if css2_files:
+                  for path in css2_files:
+                      report.write(f'- {path}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+
+              report.write('\nFile font lokal di seluruh template_admin:\n')
+              if font_files:
+                  for path in font_files:
+                      report.write(f'- {path}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+
+              report.write('\nImport pada app.min.css:\n')
+              for item in imports:
+                  report.write(f'- {item}\n')
+
+              report.write('\nRantai font tema:\n')
+              for item in theme_chain:
+                  report.write(f'- {item}\n')
+
+              report.write('\nCustom property font-weight:\n')
+              if weight_vars:
+                  for item in weight_vars:
+                      report.write(f'- {item}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+
+              report.write('\nNilai font-weight yang digunakan app.min.css:\n')
+              for item in weights:
+                  report.write(f'- {item}\n')
+
+              report.write('\nNilai font-style yang digunakan app.min.css:\n')
+              for item in styles:
+                  report.write(f'- {item}\n')
+
+              report.write('\nNilai font-family yang digunakan app.min.css:\n')
+              for item in families:
+                  report.write(f'- {item}\n')
+
+          print(Path('laporan-verifikasi-paket-font-ubold.txt').read_text(encoding='utf-8'))
+          PY
+
+      - name: Upload laporan
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-verifikasi-paket-font-ubold
+          path: laporan-verifikasi-paket-font-ubold.txt
+          retention-days: 7
+          if-no-files-found: error
