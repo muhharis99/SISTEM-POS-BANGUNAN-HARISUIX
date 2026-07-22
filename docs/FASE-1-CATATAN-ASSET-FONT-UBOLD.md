@@ -1,18 +1,26 @@
-# Fase 1 — Catatan Import Font UBold
+# Fase 1 — Hasil Investigasi Import Font UBold
 
 ## Status
 
-**Temuan terbuka — belum diubah sepihak.**
+**Investigasi selesai — belum dilakukan perubahan asset.**
 
-## Temuan
+Keputusan perbaikan font tetap menunggu persetujuan pemilik proyek.
 
-Berkas berikut:
+## Berkas sumber
+
+Import ditemukan pada:
 
 ```text
 template_admin/assets/css/app.min.css
 ```
 
-memuat beberapa import relatif pada awal berkas:
+Asset runtime hasil penyalinan berada pada:
+
+```text
+public/assets/admin/css/app.min.css
+```
+
+Import yang ditemukan:
 
 ```css
 @import url(../../../../css2);
@@ -23,44 +31,129 @@ memuat beberapa import relatif pada awal berkas:
 @import url(../../../../css2-5);
 @import url(../../../../css2-6);
 @import url(../../../../css2-7);
+@import url(../../../../css2-6);
 @import url(../../../../css2-8);
 ```
 
-Berkas extensionless `css2`, `css2-1`, dan seterusnya belum ditemukan pada path yang dapat dipetakan dari repository melalui pemeriksaan konektor GitHub.
+`css2-6` dipanggil dua kali karena memang tertulis dua kali pada asset asli.
 
-## Dampak potensial
+## Metode investigasi
 
-Apabila request tersebut menghasilkan `404`, browser akan menggunakan font fallback sistem. Komponen Bootstrap dan UBold tetap dapat tampil, tetapi tipografi mungkin berbeda dari preview template asli.
+Pemeriksaan dilakukan pada GitHub Actions menggunakan:
 
-## Tindakan yang sengaja belum dilakukan
+- Laravel development server pada `127.0.0.1:8000`;
+- Google Chrome headless;
+- Chrome NetLog;
+- pemeriksaan URL relatif sesuai aturan resolusi URL browser;
+- request HTTP langsung untuk memastikan status;
+- pencarian file `css2*` pada repository dan asset runtime.
 
-- Tidak mengganti import dengan Google Fonts CDN.
-- Tidak menghapus import dari `app.min.css`.
-- Tidak menebak isi berkas font.
-- Tidak mengunduh font versi lain.
-- Tidak mengubah asset minified UBold.
+Tidak ada CSS, font, atau asset UBold yang diubah selama investigasi.
 
-Langkah-langkah tersebut ditahan agar aturan penguncian asset tetap dipatuhi.
+## Hasil Network browser
 
-## Verifikasi manual wajib
+Browser menyelesaikan import relatif tersebut menjadi URL pada origin aplikasi sendiri:
 
-Pada saat dashboard dijalankan:
+```text
+http://127.0.0.1:8000/css2
+http://127.0.0.1:8000/css2-1
+http://127.0.0.1:8000/css2-2
+http://127.0.0.1:8000/css2-3
+http://127.0.0.1:8000/css2-4
+http://127.0.0.1:8000/css2-5
+http://127.0.0.1:8000/css2-6
+http://127.0.0.1:8000/css2-7
+http://127.0.0.1:8000/css2-8
+```
 
-1. Buka Developer Tools browser.
-2. Buka tab **Network**.
-3. Muat ulang `/dashboard`.
-4. Cari request dengan nama `css2`, `css2-1`, dan seterusnya.
-5. Catat status HTTP dan URL final masing-masing request.
-6. Bandingkan tipografi dengan halaman HTML asli di `template_admin/`.
+Seluruh URL tersebut memberikan hasil:
 
-## Keputusan setelah pengujian
+```text
+HTTP 404 Not Found
+```
 
-Jika request berhasil, tidak ada perubahan yang diperlukan.
+Laravel server log juga mencatat request `/css2` sampai `/css2-8` saat dashboard dimuat.
 
-Jika request gagal, pemilik proyek perlu memilih salah satu tindakan berikut:
+## Apakah memanggil Google Fonts CDN?
 
-1. Menyediakan salinan persis berkas sumber font yang digunakan template.
-2. Mengizinkan font lokal pengganti yang dicatat versinya.
-3. Mengizinkan font fallback sistem.
+**Tidak.**
 
-Tidak ada opsi yang diterapkan sebelum hasil Network browser tersedia dan pemilik proyek memberikan persetujuan.
+Pada asset yang sedang digunakan, import berbentuk URL relatif. Chrome NetLog mencatat request URL aktual hanya menuju:
+
+```text
+http://127.0.0.1:8000/css2...
+```
+
+Tidak terdapat request URL aktual menuju:
+
+```text
+https://fonts.googleapis.com/...
+https://fonts.gstatic.com/...
+```
+
+String `https://fonts.gstatic.com` sempat muncul pada data mentah NetLog sebagai bagian dari daftar origin internal bawaan Chrome, bukan sebagai request halaman. Setelah NetLog diperiksa berdasarkan field URL request, origin tersebut tidak pernah diminta oleh dashboard.
+
+## Apakah file lokal tersedia?
+
+Tidak ditemukan file extensionless berikut di repository maupun asset runtime:
+
+```text
+css2
+css2-1
+css2-2
+css2-3
+css2-4
+css2-5
+css2-6
+css2-7
+css2-8
+```
+
+Script `scripts/salin-aset-template.php` hanya menyalin isi:
+
+```text
+template_admin/assets
+```
+
+ke:
+
+```text
+public/assets/admin
+```
+
+Karena file `css2*` tidak tersedia pada sumber tersebut, request ke root aplikasi tetap gagal `404`.
+
+## Font yang digunakan oleh tema
+
+Pada `app.min.css`, font utama tema dideklarasikan sebagai:
+
+```css
+--theme-font-sans-serif: "Nunito", sans-serif;
+```
+
+Karena stylesheet penyedia font gagal dimuat, browser akan mencoba font `Nunito` yang sudah terpasang pada sistem pengguna. Apabila tidak tersedia, browser memakai fallback generik `sans-serif`.
+
+Artinya, saat ini tidak ada kebocoran request ke CDN, tetapi masih ada kemungkinan perbedaan tipografi terhadap preview UBold asli.
+
+## Kesimpulan
+
+1. `css2` bukan URL CDN langsung.
+2. Referensi tersebut adalah path relatif yang salah atau tidak lengkap.
+3. Browser benar-benar meminta `/css2` sampai `/css2-8` pada origin lokal.
+4. Semua request menghasilkan `404`.
+5. Tidak ada request aktual ke Google Fonts.
+6. Font utama yang disebut asset adalah `Nunito`.
+7. Tidak ada perubahan font yang diterapkan.
+
+## Opsi keputusan pemilik
+
+Pilihan yang paling menjaga tampilan adalah:
+
+1. menemukan URL Google Fonts asli atau paket sumber UBold yang memuat stylesheet `css2*`;
+2. mengambil file font **Nunito dengan weight/style persis yang diperlukan**;
+3. menyimpan font secara lokal di `public/assets/admin/fonts/`;
+4. membuat stylesheet lokal yang berisi deklarasi `@font-face`;
+5. mengganti import `css2*` dengan referensi lokal;
+6. memverifikasi checksum, Network browser, dan perbandingan visual.
+
+Langkah tersebut belum dijalankan karena pemilik meminta laporan investigasi terlebih dahulu.
