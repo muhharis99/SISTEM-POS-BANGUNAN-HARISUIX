@@ -2,8 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
-use Throwable;
 
 return new class extends Migration
 {
@@ -17,7 +15,7 @@ return new class extends Migration
         $namaDatabase = (string) config('database.connections.mysql.database');
 
         if (! preg_match('/^[A-Za-z0-9_]+$/', $namaDatabase)) {
-            throw new RuntimeException('Nama database tidak aman untuk diproses: '.$namaDatabase);
+            throw new \RuntimeException('Nama database tidak aman untuk diproses: '.$namaDatabase);
         }
 
         DB::unprepared(sprintf(
@@ -34,11 +32,11 @@ return new class extends Migration
 
             try {
                 DB::unprepared($pernyataan);
-            } catch (Throwable $exception) {
+            } catch (\Throwable $exception) {
                 $ringkas = preg_replace('/\s+/', ' ', trim($pernyataan)) ?? trim($pernyataan);
                 $ringkas = mb_substr($ringkas, 0, 500);
 
-                throw new RuntimeException(
+                throw new \RuntimeException(
                     sprintf(
                         'Gagal menjalankan statement SQL final nomor %d dari %d: %s. Penyebab: %s',
                         $indeks + 1,
@@ -88,7 +86,7 @@ return new class extends Migration
     private function pastikanMySql(): void
     {
         if (DB::connection()->getDriverName() !== 'mysql') {
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 'Baseline database final hanya boleh dijalankan pada koneksi MySQL/MariaDB.'
             );
         }
@@ -99,13 +97,13 @@ return new class extends Migration
         $lokasi = base_path($this->berkasSql);
 
         if (! is_file($lokasi)) {
-            throw new RuntimeException('Berkas SQL final tidak ditemukan: '.$lokasi);
+            throw new \RuntimeException('Berkas SQL final tidak ditemukan: '.$lokasi);
         }
 
         $isi = file_get_contents($lokasi);
 
         if ($isi === false || trim($isi) === '') {
-            throw new RuntimeException('Berkas SQL final kosong atau gagal dibaca: '.$lokasi);
+            throw new \RuntimeException('Berkas SQL final kosong atau gagal dibaca: '.$lokasi);
         }
 
         return preg_replace('/^\xEF\xBB\xBF/', '', $isi) ?? $isi;
