@@ -40,14 +40,22 @@ jobs:
           extensions: mbstring
           coverage: none
 
-      - name: Verifikasi dan terapkan paket Fase 4
+      - name: Decode paket Base64
         run: |
           set -euo pipefail
-
           cat .fase4-paket/part-* | base64 --decode > /tmp/fase4-package.tar.gz
           test -s /tmp/fase4-package.tar.gz
-          gzip -t /tmp/fase4-package.tar.gz
+          wc -c /tmp/fase4-package.tar.gz
+          sha256sum /tmp/fase4-package.tar.gz
+
+      - name: Uji integritas Gzip
+        run: gzip -t /tmp/fase4-package.tar.gz
+
+      - name: Audit daftar berkas paket
+        run: |
+          set -euo pipefail
           tar -tzf /tmp/fase4-package.tar.gz > /tmp/fase4-package-files.txt
+          cat /tmp/fase4-package-files.txt
 
           if grep -E '(^|/)\.\.?(/|$)|^/' /tmp/fase4-package-files.txt; then
             echo 'Paket mengandung path yang tidak aman.' >&2
@@ -59,9 +67,15 @@ jobs:
             exit 1
           fi
 
-          tar -xzf /tmp/fase4-package.tar.gz -C .
-          find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Ekstrak paket ke branch Fase 4
+        run: tar -xzf /tmp/fase4-package.tar.gz -C .
 
+      - name: Periksa sintaks PHP
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Commit implementasi ke branch Fase 4
+        run: |
+          set -euo pipefail
           rm -rf .fase4-paket
           rm .github/workflows/terapkan-fase-4-sekali.yml
 
