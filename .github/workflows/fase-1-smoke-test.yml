@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test-fondasi:
@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.sha }}
 
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -34,25 +32,6 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Commit resolved Composer lock
-        if: github.event_name == 'push' && github.ref == 'refs/heads/fase-1-fondasi'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add composer.lock
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(fase-1): kunci dependency composer"
-            git push origin HEAD:fase-1-fondasi
-          fi
-
-      - name: Upload resolved Composer lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: composer-lock
-          path: composer.lock
-          retention-days: 7
-          if-no-files-found: error
-
       - name: Prepare environment
         run: |
           cp .env.example .env
@@ -62,9 +41,59 @@ jobs:
       - name: Check PHP syntax
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Report PHP formatting
-        continue-on-error: true
+      - name: Check PHP formatting
         run: vendor/bin/pint --test
 
       - name: Run tests without database migration
         run: php artisan test
+
+  verifikasi-sql-final:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=sistem_informasi_toko_bangunan/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+
+      - name: Import SQL final directly
+        run: mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot < struktur_database_toko_bangunan.sql
+
+      - name: Verify schema against SQL final
+        run: php artisan skema:verifikasi --rinci
+
+      - name: Assert exact business object counts
+        run: |
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='BASE TABLE';")" = "70"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")" = "3"
