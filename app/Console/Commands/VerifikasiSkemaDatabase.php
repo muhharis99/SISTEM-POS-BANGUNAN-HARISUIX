@@ -164,10 +164,12 @@ class VerifikasiSkemaDatabase extends Command
         $actual = [];
 
         foreach ($barisAktual as $kolom) {
+            $tipe = $this->normalisasiTipe((string) $kolom->Type);
+
             $actual[$kolom->Field] = [
-                'tipe' => $this->normalisasiTipe((string) $kolom->Type),
+                'tipe' => $tipe,
                 'nullable' => $kolom->Null === 'YES',
-                'default' => $this->normalisasiDefault($kolom->Default),
+                'default' => $this->normalisasiDefault($kolom->Default, $tipe),
                 'auto_increment' => str_contains((string) $kolom->Extra, 'auto_increment'),
             ];
         }
@@ -204,7 +206,7 @@ class VerifikasiSkemaDatabase extends Command
         $hasil = [];
 
         foreach ($this->barisDefinisi($definisi) as $baris) {
-            if (preg_match('/^(PRIMARY|UNIQUE|KEY|CONSTRAINT|FOREIGN)\b/i', $baris) === 1) {
+            if (preg_match('/^(PRIMARY|UNIQUE|KEY|CONSTRAINT|FOREIGN|REFERENCES|ON)\b/i', $baris) === 1) {
                 continue;
             }
 
@@ -215,19 +217,24 @@ class VerifikasiSkemaDatabase extends Command
             $nama = $cocok[1];
             $atribut = $cocok[2];
 
-            if (preg_match('/^([A-Za-z]+(?:\([^)]*\))?(?:\s+UNSIGNED)?)/i', $atribut, $tipe) !== 1) {
+            if (preg_match('/^([A-Za-z]+(?:\([^)]*\))?(?:\s+UNSIGNED)?)/i', $atribut, $tipeCocok) !== 1) {
                 continue;
             }
 
+            $tipe = $this->normalisasiTipe($tipeCocok[1]);
             $default = null;
 
             if (preg_match('/\bDEFAULT\s+(CURRENT_TIMESTAMP|NULL|[-+]?[0-9]+(?:\.[0-9]+)?|\'[^\']*\'|"[^"]*")/i', $atribut, $nilaiDefault) === 1) {
-                $default = $this->normalisasiDefault($nilaiDefault[1]);
+                $default = $this->normalisasiDefault($nilaiDefault[1], $tipe);
             }
 
+            $primaryAtauAutoIncrement = preg_match('/\b(?:PRIMARY\s+KEY|AUTO_INCREMENT)\b/i', $atribut) === 1;
+
             $hasil[$nama] = [
-                'tipe' => $this->normalisasiTipe($tipe[1]),
-                'nullable' => preg_match('/\bNOT\s+NULL\b/i', $atribut) !== 1,
+                'tipe' => $tipe,
+                'nullable' => $primaryAtauAutoIncrement
+                    ? false
+                    : preg_match('/\bNOT\s+NULL\b/i', $atribut) !== 1,
                 'default' => $default,
                 'auto_increment' => preg_match('/\bAUTO_INCREMENT\b/i', $atribut) === 1,
             ];
@@ -273,9 +280,7 @@ class VerifikasiSkemaDatabase extends Command
         $hasil = [];
 
         foreach ($this->barisDefinisi($definisi) as $baris) {
-            if (
-                preg_match('/^`?([A-Za-z0-9_]+)`?\s+.+\bPRIMARY\s+KEY\b/i', $baris, $inline) === 1
-            ) {
+            if (preg_match('/^`?([A-Za-z0-9_]+)`?\s+.+\bPRIMARY\s+KEY\b/i', $baris, $inline) === 1) {
                 $hasil['PRIMARY'] = ['unik' => true, 'kolom' => [$inline[1]]];
 
                 continue;
@@ -340,9 +345,12 @@ class VerifikasiSkemaDatabase extends Command
                 'kolom' => $baris->kolom,
                 'tabel_tujuan' => $baris->tabel_tujuan,
                 'kolom_tujuan' => $baris->kolom_tujuan,
-                'aturan_hapus' => strtoupper((string) $baris->aturan_hapus),
+                'aturan_hapus' => $this->normalisasiAturanHapus((string) $baris->aturan_hapus),
             ];
         }
+
+        ksort($expected);
+        ksort($actual);
 
         if ($expected !== $actual) {
             $this->kesalahan[] = 'Foreign key tabel '.$namaTabel.' berbeda dari SQL final.';
@@ -366,9 +374,7 @@ class VerifikasiSkemaDatabase extends Command
                 'kolom' => $item[2],
                 'tabel_tujuan' => $item[3],
                 'kolom_tujuan' => $item[4],
-                'aturan_hapus' => strtoupper(
-                    preg_replace('/\s+/', ' ', $item[5] ?? 'RESTRICT') ?? 'RESTRICT'
-                ),
+                'aturan_hapus' => $this->normalisasiAturanHapus($item[5] ?? 'NO ACTION'),
             ];
         }
 
@@ -389,7 +395,14 @@ class VerifikasiSkemaDatabase extends Command
         return strtolower(preg_replace('/\s+/', ' ', trim($tipe)) ?? trim($tipe));
     }
 
-    private function normalisasiDefault(mixed $nilai): ?string
+    private function normalisasiAturanHapus(string $aturan): string
+    {
+        $aturan = strtoupper(preg_replace('/\s+/', ' ', trim($aturan)) ?? trim($aturan));
+
+        return $aturan === 'RESTRICT' ? 'NO ACTION' : $aturan;
+    }
+
+    private function normalisasiDefault(mixed $nilai, ?string $tipe = null): ?string
     {
         if ($nilai === null) {
             return null;
@@ -408,8 +421,49 @@ class VerifikasiSkemaDatabase extends Command
             $nilai = substr($nilai, 1, -1);
         }
 
-        $nilai = strtolower($nilai);
+        $nilaiHurufKecil = strtolower($nilai);
 
-        return $nilai === 'current_timestamp()' ? 'current_timestamp' : $nilai;
+        if (in_array($nilaiHurufKecil, ['current_timestamp', 'current_timestamp()'], true)) {
+            return 'current_timestamp';
+        }
+
+        if ($this->tipeNumerik($tipe) && preg_match('/^[+-]?\d+(?:\.\d+)?$/', $nilai) === 1) {
+            return $this->normalisasiAngka($nilai);
+        }
+
+        return $nilaiHurufKecil;
+    }
+
+    private function tipeNumerik(?string $tipe): bool
+    {
+        if ($tipe === null) {
+            return false;
+        }
+
+        return preg_match(
+            '/^(?:tinyint|smallint|mediumint|int|integer|bigint|decimal|numeric|float|double|real|bit)\b/i',
+            trim($tipe)
+        ) === 1;
+    }
+
+    private function normalisasiAngka(string $nilai): string
+    {
+        $negatif = str_starts_with($nilai, '-');
+        $tanpaTanda = ltrim($nilai, '+-');
+        [$bagianBulat, $bagianDesimal] = array_pad(explode('.', $tanpaTanda, 2), 2, '');
+
+        $bagianBulat = ltrim($bagianBulat, '0');
+        $bagianBulat = $bagianBulat === '' ? '0' : $bagianBulat;
+        $bagianDesimal = rtrim($bagianDesimal, '0');
+
+        $hasil = $bagianDesimal === ''
+            ? $bagianBulat
+            : $bagianBulat.'.'.$bagianDesimal;
+
+        if ($negatif && $hasil !== '0') {
+            return '-'.$hasil;
+        }
+
+        return $hasil;
     }
 }
