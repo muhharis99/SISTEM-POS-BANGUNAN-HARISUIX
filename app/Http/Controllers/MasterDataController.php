@@ -18,6 +18,7 @@ class MasterDataController extends Controller
         'metode_pembayaran' => ['kolom' => 'kode_metode_pembayaran', 'nilai' => ['TUNAI']],
         'tarif_pajak' => ['kolom' => 'kode_tarif_pajak', 'nilai' => ['NON_PAJAK']],
     ];
+
     public function index(Request $request, string $slug): View
     {
         $konfigurasi = $this->konfigurasi($slug);
@@ -109,7 +110,6 @@ class MasterDataController extends Controller
 
         return back()->with('berhasil', 'Status '.$konfigurasi['judul'].' berhasil diubah.');
     }
-
 
     private function pastikanDataDilindungiTidakDiubah(array $konfigurasi, object $lama, array $data): void
     {
