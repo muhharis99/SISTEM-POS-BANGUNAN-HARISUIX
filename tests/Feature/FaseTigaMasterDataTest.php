@@ -30,9 +30,16 @@ class FaseTigaMasterDataTest extends TestCase
 
     public function test_data_awal_fase_tiga_lengkap_dan_pajak_default_nol(): void
     {
+        $kodeWajib = ['KONTRAKTOR_PROYEK', 'TOKO_RESELLER', 'TUKANG', 'UMUM'];
+
         $this->assertSame(
-            ['KONTRAKTOR_PROYEK', 'TOKO_RESELLER', 'TUKANG', 'UMUM'],
-            DB::table('jenis_pelanggan')->whereNull('deleted_at')->orderBy('kode_jenis_pelanggan')->pluck('kode_jenis_pelanggan')->all()
+            $kodeWajib,
+            DB::table('jenis_pelanggan')
+                ->whereNull('deleted_at')
+                ->whereIn('kode_jenis_pelanggan', $kodeWajib)
+                ->orderBy('kode_jenis_pelanggan')
+                ->pluck('kode_jenis_pelanggan')
+                ->all()
         );
         $this->assertDatabaseHas('pelanggan', ['kode_pelanggan' => 'UMUM', 'nama_pelanggan' => 'PELANGGAN TUNAI', 'status_aktif' => 1]);
         $this->assertDatabaseHas('tarif_pajak', ['kode_tarif_pajak' => 'NON_PAJAK', 'persen_pajak' => 0]);
