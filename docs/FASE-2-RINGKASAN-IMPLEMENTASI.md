@@ -2,12 +2,12 @@
 
 ## Status
 
-**Implementasi kode dan pengujian otomatis selesai. Fase 2 tetap belum lulus sampai pemilik menyatakan eksplisit `Fase 2 lulus`.**
+**FASE 2 LULUS. Pemilik menyatakan eksplisit `Fase 2 lulus` pada 22 Juli 2026 setelah implementasi, CI, dan checklist manual dinyatakan diterima.**
 
 - Branch: `fase-2-autentikasi-organisasi-rbac`
-- Pull request: Draft PR #3
+- Pull request: PR #3
 - Target: `main`
-- Merge otomatis: dilarang
+- Status kelulusan: lulus
 - Implementasi Fase 3: belum dimulai
 
 ## Prinsip utama
@@ -175,16 +175,16 @@ Workflow MySQL 8.4 memeriksa:
 - asset UBold dan Nunito lokal;
 - tidak ada workflow komentar/ChatOps yang melakukan merge otomatis.
 
-## Batas fase
+## Checkpoint kelulusan
 
-Fase 2 belum dinyatakan lulus hanya berdasarkan CI. Sebelum kelulusan formal, pemilik perlu menjalankan checklist manual pada `docs/FASE-2-CHECKLIST-PENGUJIAN-MANUAL.md` dan kemudian menyatakan eksplisit:
+Pemilik telah menyelesaikan checkpoint manual dan menyatakan eksplisit:
 
 ```text
 Fase 2 lulus
 ```
 
-Sebelum pernyataan tersebut:
+Dengan keputusan tersebut:
 
-- Draft PR #3 tidak boleh digabung;
-- tag/checkpoint Fase 2 tidak boleh dibuat;
-- implementasi Fase 3 tidak boleh dimulai.
+- PR #3 boleh digabung ke `main` setelah CI pada commit checkpoint berhasil;
+- tag `fase-2-selesai` boleh dibuat pada commit hasil merge;
+- Fase 3 tetap belum dimulai sampai ada perintah terpisah dari pemilik.
