@@ -59,49 +59,10 @@ jobs:
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Check PHP formatting
-        id: pint
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          vendor/bin/pint --test --format=json 2>&1 | tee laporan-pint-fase-2.json
-
-      - name: Generate exact Pint patch
-        if: steps.pint.outcome == 'failure'
-        run: |
-          vendor/bin/pint app bootstrap config database routes scripts tests
-          git diff -- app bootstrap config database routes scripts tests > laporan-pint-fase-2.patch
-          cat laporan-pint-fase-2.patch
-
-      - name: Upload Pint report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: laporan-pint-fase-2
-          path: |
-            laporan-pint-fase-2.json
-            laporan-pint-fase-2.patch
-          retention-days: 7
-          if-no-files-found: error
+        run: vendor/bin/pint --test
 
       - name: Run patent schema migration
-        id: migration
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          php artisan migrate --force 2>&1 | tee laporan-migration-fase-2.txt
-
-      - name: Upload migration report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: laporan-migration-fase-2
-          path: laporan-migration-fase-2.txt
-          retention-days: 7
-          if-no-files-found: error
-
-      - name: Stop when migration failed
-        if: steps.migration.outcome == 'failure'
-        run: exit 1
+        run: php artisan migrate --force
 
       - name: Add explicit test branch data
         run: |
@@ -130,26 +91,9 @@ jobs:
         run: php artisan skema:verifikasi --rinci
 
       - name: Run Phase 2 integration tests
-        id: integration
-        continue-on-error: true
         env:
           FASE2_INTEGRATION: true
-        run: |
-          set -o pipefail
-          php artisan test --filter=FaseDuaAutentikasiTest 2>&1 | tee laporan-integration-test-fase-2.txt
-
-      - name: Upload integration test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: laporan-integration-test-fase-2
-          path: laporan-integration-test-fase-2.txt
-          retention-days: 7
-          if-no-files-found: error
-
-      - name: Stop when integration test failed
-        if: steps.integration.outcome == 'failure'
-        run: exit 1
+        run: php artisan test --filter=FaseDuaAutentikasiTest
 
       - name: Run regression tests
         run: php artisan test
