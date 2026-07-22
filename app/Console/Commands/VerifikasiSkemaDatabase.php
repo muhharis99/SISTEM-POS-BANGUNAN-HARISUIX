@@ -205,19 +205,19 @@ class VerifikasiSkemaDatabase extends Command
     {
         $hasil = [];
 
-        foreach ($this->barisDefinisi($definisi) as $baris) {
-            if (preg_match('/^(PRIMARY|UNIQUE|KEY|CONSTRAINT|FOREIGN|REFERENCES|ON)\b/i', $baris) === 1) {
+        foreach ($this->bagianDefinisi($definisi) as $bagian) {
+            if (preg_match('/^(PRIMARY|UNIQUE|KEY|CONSTRAINT|FOREIGN|REFERENCES|ON)\b/i', $bagian) === 1) {
                 continue;
             }
 
-            if (preg_match('/^`?([A-Za-z0-9_]+)`?\s+(.+)$/', $baris, $cocok) !== 1) {
+            if (preg_match('/^`?([A-Za-z0-9_]+)`?\s+(.+)$/s', $bagian, $cocok) !== 1) {
                 continue;
             }
 
             $nama = $cocok[1];
             $atribut = $cocok[2];
 
-            if (preg_match('/^([A-Za-z]+(?:\([^)]*\))?(?:\s+UNSIGNED)?)/i', $atribut, $tipeCocok) !== 1) {
+            if (preg_match('/^([A-Za-z]+(?:\([^)]*\))?(?:\s+UNSIGNED)?)/is', $atribut, $tipeCocok) !== 1) {
                 continue;
             }
 
@@ -279,26 +279,26 @@ class VerifikasiSkemaDatabase extends Command
     {
         $hasil = [];
 
-        foreach ($this->barisDefinisi($definisi) as $baris) {
-            if (preg_match('/^`?([A-Za-z0-9_]+)`?\s+.+\bPRIMARY\s+KEY\b/i', $baris, $inline) === 1) {
+        foreach ($this->bagianDefinisi($definisi) as $bagian) {
+            if (preg_match('/^`?([A-Za-z0-9_]+)`?\s+.+\bPRIMARY\s+KEY\b/is', $bagian, $inline) === 1) {
                 $hasil['PRIMARY'] = ['unik' => true, 'kolom' => [$inline[1]]];
 
                 continue;
             }
 
-            if (preg_match('/^PRIMARY\s+KEY\s*\(([^)]+)\)/i', $baris, $cocok) === 1) {
+            if (preg_match('/^PRIMARY\s+KEY\s*\(([^)]+)\)/i', $bagian, $cocok) === 1) {
                 $hasil['PRIMARY'] = ['unik' => true, 'kolom' => $this->parseKolomIndex($cocok[1])];
 
                 continue;
             }
 
-            if (preg_match('/^UNIQUE\s+KEY\s+`?([A-Za-z0-9_]+)`?\s*\(([^)]+)\)/i', $baris, $cocok) === 1) {
+            if (preg_match('/^UNIQUE\s+KEY\s+`?([A-Za-z0-9_]+)`?\s*\(([^)]+)\)/i', $bagian, $cocok) === 1) {
                 $hasil[$cocok[1]] = ['unik' => true, 'kolom' => $this->parseKolomIndex($cocok[2])];
 
                 continue;
             }
 
-            if (preg_match('/^KEY\s+`?([A-Za-z0-9_]+)`?\s*\(([^)]+)\)/i', $baris, $cocok) === 1) {
+            if (preg_match('/^KEY\s+`?([A-Za-z0-9_]+)`?\s*\(([^)]+)\)/i', $bagian, $cocok) === 1) {
                 $hasil[$cocok[1]] = ['unik' => false, 'kolom' => $this->parseKolomIndex($cocok[2])];
             }
         }
@@ -382,17 +382,68 @@ class VerifikasiSkemaDatabase extends Command
     }
 
     /** @return array<int, string> */
-    private function barisDefinisi(string $definisi): array
+    private function bagianDefinisi(string $definisi): array
     {
-        return array_values(array_filter(array_map(
-            static fn (string $baris): string => trim(rtrim($baris, ',')),
-            preg_split('/\R/', $definisi) ?: []
-        )));
+        $hasil = [];
+        $buffer = '';
+        $kedalamanKurung = 0;
+        $kutipTunggal = false;
+        $kutipGanda = false;
+        $kutipIdentifier = false;
+        $panjang = strlen($definisi);
+
+        for ($i = 0; $i < $panjang; $i++) {
+            $karakter = $definisi[$i];
+            $berikutnya = $i + 1 < $panjang ? $definisi[$i + 1] : '';
+            $sebelumnya = $i > 0 ? $definisi[$i - 1] : '';
+            $terlepas = $sebelumnya === '\\' && ($i < 2 || $definisi[$i - 2] !== '\\');
+
+            if ($kutipTunggal && $karakter === "'" && $berikutnya === "'") {
+                $buffer .= "''";
+                $i++;
+
+                continue;
+            }
+
+            if ($karakter === "'" && ! $kutipGanda && ! $kutipIdentifier && ! $terlepas) {
+                $kutipTunggal = ! $kutipTunggal;
+            } elseif ($karakter === '"' && ! $kutipTunggal && ! $kutipIdentifier && ! $terlepas) {
+                $kutipGanda = ! $kutipGanda;
+            } elseif ($karakter === '`' && ! $kutipTunggal && ! $kutipGanda && ! $terlepas) {
+                $kutipIdentifier = ! $kutipIdentifier;
+            }
+
+            if (! $kutipTunggal && ! $kutipGanda && ! $kutipIdentifier) {
+                if ($karakter === '(') {
+                    $kedalamanKurung++;
+                } elseif ($karakter === ')') {
+                    $kedalamanKurung = max(0, $kedalamanKurung - 1);
+                } elseif ($karakter === ',' && $kedalamanKurung === 0) {
+                    if (trim($buffer) !== '') {
+                        $hasil[] = trim($buffer);
+                    }
+
+                    $buffer = '';
+
+                    continue;
+                }
+            }
+
+            $buffer .= $karakter;
+        }
+
+        if (trim($buffer) !== '') {
+            $hasil[] = trim($buffer);
+        }
+
+        return $hasil;
     }
 
     private function normalisasiTipe(string $tipe): string
     {
-        return strtolower(preg_replace('/\s+/', ' ', trim($tipe)) ?? trim($tipe));
+        $tipe = strtolower(preg_replace('/\s+/', ' ', trim($tipe)) ?? trim($tipe));
+
+        return preg_replace('/\s*([(),])\s*/', '$1', $tipe) ?? $tipe;
     }
 
     private function normalisasiAturanHapus(string $aturan): string
