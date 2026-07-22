@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTASI BERJALAN — BELUM LULUS.**
+**IMPLEMENTASI SELESAI — SELURUH CI OTOMATIS HIJAU — MENUNGGU CHECKLIST MANUAL DAN KELULUSAN FORMAL.**
 
 - Branch: `fase-3-master-data`
 - Pull request: Draft PR #4
@@ -10,7 +10,7 @@
 - Merge otomatis: dilarang
 - Implementasi Fase 4: belum dimulai
 
-Fase 3 hanya boleh dinyatakan lulus setelah seluruh pengujian otomatis dan checklist manual selesai, kemudian pemilik menyatakan eksplisit `Fase 3 lulus`.
+Fase 3 hanya boleh dinyatakan lulus setelah checklist manual selesai dan pemilik menyatakan eksplisit `Fase 3 lulus`. PR #4 tetap draft dan belum merged sampai pernyataan tersebut.
 
 ## Integritas skema paten
 
@@ -53,6 +53,8 @@ Data awal jenis pelanggan:
 - Tukang;
 - Kontraktor/Proyek;
 - Toko/Reseller.
+
+Data tersebut melengkapi data jenis pelanggan yang sudah ada pada baseline SQL paten dan tidak menghapus kode lama seperti `KONTRAKTOR` atau `TOKO`.
 
 Pelanggan default:
 
@@ -157,23 +159,28 @@ Halaman Fase 3:
 
 Tambah dan edit dilakukan melalui modal pada halaman daftar yang sama.
 
-## Pengujian otomatis
+## Hasil pengujian otomatis final
 
-Workflow Fase 3 wajib:
+Workflow Fase 3 telah berhasil menjalankan:
 
-1. memvalidasi sintaks PHP dan Pint;
-2. membuat backup database kosong sebelum migration;
-3. menjalankan migration SQL paten;
-4. membuat backup baseline sebelum seeder dan integration test Fase 3;
-5. mengunggah backup sebagai artifact;
-6. menyiapkan Fase 2 dan Fase 3;
-7. memastikan tepat 71 base table, yaitu 70 tabel bisnis dan `migrations`;
-8. memastikan tepat 3 view;
-9. memastikan tidak ada tabel session/cache/queue/password-reset;
-10. memverifikasi 29 permission aktif setelah Fase 2 dan Fase 3;
-11. menguji data awal, aturan desimal, barcode, perlindungan data default, isolasi cabang, RBAC, dan periode harga;
-12. menjalankan integration test Fase 2;
-13. menjalankan seluruh regression test Fase 1–Fase 3.
+1. validasi sintaks PHP dan Pint;
+2. backup database kosong sebelum migration;
+3. migration SQL paten;
+4. penyiapan fixture Administrator Fase 2 dan Fase 3;
+5. backup baseline sebelum seeder dan integration test Fase 3;
+6. pengunggahan kedua backup sebagai artifact;
+7. penyiapan permission dan data awal Fase 3;
+8. verifikasi tepat 71 base table, yaitu 70 tabel bisnis dan `migrations`;
+9. verifikasi tepat 3 view;
+10. verifikasi tidak ada tabel session/cache/queue/password-reset tambahan;
+11. verifikasi 29 permission aktif setelah Fase 2 dan Fase 3;
+12. verifikasi data awal pelanggan, gudang khusus, dan pajak 0%;
+13. `php artisan skema:verifikasi --rinci`;
+14. sembilan integration test Fase 3;
+15. lima integration test Fase 2 sebagai regresi;
+16. seluruh regression test suite Fase 1–Fase 3.
+
+Workflow Fase 3 bersifat read-only dan hard-failing. Tidak ada langkah merge, tag, auto-merge, atau penulisan ke `main`. Workflow UBold, Nunito, smoke test Fase 1, test Fase 2, dan audit auto-merge juga berhasil pada checkpoint otomatis terakhir.
 
 ## Batas fase
 
