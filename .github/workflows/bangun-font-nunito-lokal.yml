@@ -1,159 +1,85 @@
-name: Bangun Font Nunito Lokal
+name: Verifikasi Font Nunito Lokal
 
 on:
   push:
     branches:
       - fase-1-fondasi
     paths:
+      - 'template_admin/assets/fonts/nunito/**'
+      - 'scripts/salin-aset-template.php'
       - '.github/workflows/bangun-font-nunito-lokal.yml'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  bangun-font:
+  verifikasi-font:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout branch Fase 1
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: fase-1-fondasi
-          fetch-depth: 0
 
-      - name: Lewati jika font sudah tersedia
-        id: cek_font
-        run: |
-          if [ -f template_admin/assets/fonts/nunito/Nunito-Variable.woff2 ] \
-            && [ -f template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2 ]; then
-            echo "sudah_ada=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "sudah_ada=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup Python dan fontTools
-        if: steps.cek_font.outputs.sudah_ada == 'false'
+      - name: Setup fontTools
         run: |
           python3 -m pip install --disable-pip-version-check --no-cache-dir 'fonttools[woff]==4.63.0'
 
-      - name: Ambil sumber resmi Google Fonts
-        if: steps.cek_font.outputs.sudah_ada == 'false'
+      - name: Verifikasi file, checksum, axis, dan style
         run: |
           set -euo pipefail
 
-          FONT_COMMIT="$(git ls-remote https://github.com/google/fonts.git refs/heads/main | awk '{print $1}')"
-          test -n "$FONT_COMMIT"
+          NORMAL='template_admin/assets/fonts/nunito/Nunito-Variable.woff2'
+          ITALIC='template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2'
+          LICENSE='template_admin/assets/fonts/nunito/OFL.txt'
+          SOURCE='template_admin/assets/fonts/nunito/SUMBER.md'
 
-          mkdir -p sumber-font template_admin/assets/fonts/nunito
+          test -f "$NORMAL"
+          test -f "$ITALIC"
+          test -f "$LICENSE"
+          test -f "$SOURCE"
 
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/google/fonts/${FONT_COMMIT}/ofl/nunito/Nunito%5Bwght%5D.ttf" \
-            --output sumber-font/Nunito-wght.ttf
+          grep -F "$(sha256sum "$NORMAL" | awk '{print $1}')" "$SOURCE"
+          grep -F "$(sha256sum "$ITALIC" | awk '{print $1}')" "$SOURCE"
+          grep -F "$(sha256sum "$LICENSE" | awk '{print $1}')" "$SOURCE"
+          grep -F 'SIL OPEN FONT LICENSE Version 1.1' "$LICENSE"
 
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/google/fonts/${FONT_COMMIT}/ofl/nunito/Nunito-Italic%5Bwght%5D.ttf" \
-            --output sumber-font/Nunito-Italic-wght.ttf
-
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/google/fonts/${FONT_COMMIT}/ofl/nunito/OFL.txt" \
-            --output template_admin/assets/fonts/nunito/OFL.txt
-
-          printf '%s\n' "$FONT_COMMIT" > sumber-font/google-fonts-commit.txt
-
-      - name: Batasi axis 300–700 dan konversi ke WOFF2
-        if: steps.cek_font.outputs.sudah_ada == 'false'
-        run: |
           python3 - <<'PY'
           from pathlib import Path
           from fontTools.ttLib import TTFont
-          from fontTools.varLib.instancer import instantiateVariableFont
 
           pairs = [
               (
-                  Path('sumber-font/Nunito-wght.ttf'),
                   Path('template_admin/assets/fonts/nunito/Nunito-Variable.woff2'),
                   'normal',
               ),
               (
-                  Path('sumber-font/Nunito-Italic-wght.ttf'),
                   Path('template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2'),
                   'italic',
               ),
           ]
 
-          for source, destination, expected_style in pairs:
-              font = TTFont(source)
+          for path, expected_style in pairs:
+              font = TTFont(path)
+              if font.flavor != 'woff2':
+                  raise SystemExit(f'{path} bukan WOFF2.')
               if 'fvar' not in font:
-                  raise SystemExit(f'{source} bukan variable font.')
+                  raise SystemExit(f'{path} bukan variable font.')
 
               axis = next((item for item in font['fvar'].axes if item.axisTag == 'wght'), None)
               if axis is None:
-                  raise SystemExit(f'Axis wght tidak ditemukan pada {source}.')
-
-              instantiateVariableFont(font, {'wght': (300, 700)}, inplace=True)
-              font.flavor = 'woff2'
-              destination.parent.mkdir(parents=True, exist_ok=True)
-              font.save(destination)
-
-              verified = TTFont(destination)
-              verified_axis = next((item for item in verified['fvar'].axes if item.axisTag == 'wght'), None)
-              if verified_axis is None:
-                  raise SystemExit(f'Axis wght hilang pada {destination}.')
-              if int(verified_axis.minValue) != 300 or int(verified_axis.maxValue) != 700:
+                  raise SystemExit(f'Axis wght tidak ditemukan pada {path}.')
+              if int(axis.minValue) != 300 or int(axis.maxValue) != 700:
                   raise SystemExit(
-                      f'Rentang axis {destination} tidak sesuai: '
-                      f'{verified_axis.minValue}–{verified_axis.maxValue}'
+                      f'Rentang axis {path} tidak sesuai: {axis.minValue}–{axis.maxValue}'
                   )
 
-              italic_angle = float(verified['post'].italicAngle)
+              italic_angle = float(font['post'].italicAngle)
               if expected_style == 'normal' and italic_angle != 0:
                   raise SystemExit(f'Font normal memiliki italicAngle {italic_angle}.')
               if expected_style == 'italic' and italic_angle == 0:
                   raise SystemExit('Font italic tidak memiliki italicAngle.')
           PY
-
-      - name: Catat sumber dan checksum
-        if: steps.cek_font.outputs.sudah_ada == 'false'
-        run: |
-          set -euo pipefail
-
-          FONT_COMMIT="$(cat sumber-font/google-fonts-commit.txt)"
-          NORMAL_SHA="$(sha256sum template_admin/assets/fonts/nunito/Nunito-Variable.woff2 | awk '{print $1}')"
-          ITALIC_SHA="$(sha256sum template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2 | awk '{print $1}')"
-          LICENSE_SHA="$(sha256sum template_admin/assets/fonts/nunito/OFL.txt | awk '{print $1}')"
-
-          cat > template_admin/assets/fonts/nunito/SUMBER.md <<EOF
-          # Nunito Variable Font Lokal
-
-          Sumber resmi: repository \`google/fonts\`.
-
-          - Commit sumber: \`${FONT_COMMIT}\`
-          - File sumber normal: \`ofl/nunito/Nunito[wght].ttf\`
-          - File sumber italic: \`ofl/nunito/Nunito-Italic[wght].ttf\`
-          - Lisensi: SIL Open Font License 1.1
-          - Proses: axis \`wght\` dibatasi ke 300–700, lalu dikonversi ke WOFF2 menggunakan fontTools 4.63.0.
-
-          ## SHA-256
-
-          - \`Nunito-Variable.woff2\`: \`${NORMAL_SHA}\`
-          - \`Nunito-Italic-Variable.woff2\`: \`${ITALIC_SHA}\`
-          - \`OFL.txt\`: \`${LICENSE_SHA}\`
-          EOF
-
-      - name: Commit font ke branch Fase 1
-        if: steps.cek_font.outputs.sudah_ada == 'false'
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add template_admin/assets/fonts/nunito
-
-          if git diff --cached --quiet; then
-            echo 'Tidak ada perubahan font untuk di-commit.'
-            exit 0
-          fi
-
-          git commit -m "feat(fase-1): tambahkan Nunito variable font lokal"
-          git push origin HEAD:fase-1-fondasi
