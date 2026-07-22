@@ -96,12 +96,16 @@ jobs:
           VALUES ('CAB-UJI', 'Cabang Pengujian', 'Alamat Pengujian', 1);
           SQL
 
-      - name: Prepare Phase 2 baseline access
-        run: >-
-          php artisan fase2:siapkan
-          --nama-pengguna=admin_fase3
-          --kata-sandi='AdminFase3!2026'
-          --nama-tampilan='Administrator Fase 3'
+      - name: Prepare Phase 2 and Phase 3 administrator fixtures
+        run: |
+          php artisan fase2:siapkan \
+            --nama-pengguna=admin_fase2 \
+            --kata-sandi='AdminFase2!2026' \
+            --nama-tampilan='Administrator Fase 2'
+          php artisan fase2:siapkan \
+            --nama-pengguna=admin_fase3 \
+            --kata-sandi='AdminFase3!2026' \
+            --nama-tampilan='Administrator Fase 3'
 
       - name: Backup baseline before Phase 3 seed and tests
         run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-data-fase-3.sql
