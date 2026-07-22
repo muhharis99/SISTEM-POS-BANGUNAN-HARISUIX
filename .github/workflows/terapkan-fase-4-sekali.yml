@@ -57,8 +57,8 @@ jobs:
           tar -tzf /tmp/fase4-package.tar.gz > /tmp/fase4-package-files.txt
           cat /tmp/fase4-package-files.txt
 
-          if grep -E '(^|/)\.\.?(/|$)|^/' /tmp/fase4-package-files.txt; then
-            echo 'Paket mengandung path yang tidak aman.' >&2
+          if grep -E '(^|/)\.\.(/|$)|^/' /tmp/fase4-package-files.txt; then
+            echo 'Paket mengandung path absolut atau parent traversal.' >&2
             exit 1
           fi
 
