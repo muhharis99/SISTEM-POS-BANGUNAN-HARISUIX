@@ -6,6 +6,9 @@ on:
       - fase-1-fondasi
     paths:
       - '.github/workflows/**'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
