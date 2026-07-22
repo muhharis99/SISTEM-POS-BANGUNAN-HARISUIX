@@ -7,12 +7,23 @@ on:
     paths:
       - '.github/workflows/terapkan-fase-4-sekali.yml'
       - '.fase4-paket/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/terapkan-fase-4-sekali.yml'
+      - '.fase4-paket/**'
 
 permissions:
   contents: write
 
+concurrency:
+  group: terapkan-fase-4-sekali
+  cancel-in-progress: false
+
 jobs:
   terapkan:
+    if: github.event_name == 'push' || github.head_ref == 'fase-4-persediaan'
     runs-on: ubuntu-latest
 
     steps:
