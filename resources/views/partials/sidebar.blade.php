@@ -1,89 +1,68 @@
 <div class="sidenav-menu">
     <a href="{{ route('dashboard') }}" class="logo">
-        <span class="logo-light">
-            <span class="logo-lg"><img src="{{ asset('assets/admin/images/logo.png') }}" alt="Logo"></span>
-            <span class="logo-sm"><img src="{{ asset('assets/admin/images/logo-sm.png') }}" alt="Logo kecil"></span>
-        </span>
-        <span class="logo-dark">
-            <span class="logo-lg"><img src="{{ asset('assets/admin/images/logo-black.png') }}" alt="Logo"></span>
-            <span class="logo-sm"><img src="{{ asset('assets/admin/images/logo-sm.png') }}" alt="Logo kecil"></span>
-        </span>
+        <span class="logo-light"><span class="logo-lg"><img src="{{ asset('assets/admin/images/logo.png') }}" alt="Logo"></span><span class="logo-sm"><img src="{{ asset('assets/admin/images/logo-sm.png') }}" alt="Logo kecil"></span></span>
+        <span class="logo-dark"><span class="logo-lg"><img src="{{ asset('assets/admin/images/logo-black.png') }}" alt="Logo"></span><span class="logo-sm"><img src="{{ asset('assets/admin/images/logo-sm.png') }}" alt="Logo kecil"></span></span>
     </a>
 
-    <button class="button-sm-hover" type="button" aria-label="Perkecil sidebar">
-        <i class="ri-circle-line align-middle"></i>
-    </button>
+    <button class="button-sm-hover" type="button" aria-label="Perkecil sidebar"><i class="ri-circle-line align-middle"></i></button>
+    <button class="button-close-fullsidebar" type="button" aria-label="Tutup sidebar"><i data-lucide="x" class="align-middle"></i></button>
 
-    <button class="button-close-fullsidebar" type="button" aria-label="Tutup sidebar">
-        <i data-lucide="x" class="align-middle"></i>
-    </button>
+    @php
+        $penggunaAktif = auth()->user();
+        $idCabangAktif = session('id_cabang_aktif');
+        $bolehPengguna = $penggunaAktif?->memilikiHakAkses('PENGGUNA_LIHAT', $idCabangAktif);
+        $bolehPeran = $penggunaAktif?->memilikiHakAkses('PERAN_LIHAT', $idCabangAktif);
+        $bolehAudit = $penggunaAktif?->memilikiHakAkses('AUDIT_LIHAT', $idCabangAktif);
+    @endphp
 
     <div data-simplebar>
         <ul class="side-nav">
             <li class="side-nav-title">Menu utama</li>
-
             <li class="side-nav-item">
                 <a href="{{ route('dashboard') }}" class="side-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
-                    <span class="menu-text">Dashboard</span>
+                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span><span class="menu-text">Dashboard</span>
                 </a>
             </li>
 
-            <li class="side-nav-title">Organisasi & akses</li>
-            <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#menu-organisasi" aria-expanded="false" aria-controls="menu-organisasi" class="side-nav-link">
-                    <span class="menu-icon"><i data-lucide="users-round"></i></span>
-                    <span class="menu-text">Organisasi & Akses</span>
-                    <span class="menu-arrow"></span>
-                </a>
-                <div class="collapse" id="menu-organisasi">
-                    <ul class="sub-menu">
-                        <li class="side-nav-item"><span class="side-nav-link text-muted">Cabang</span></li>
-                        <li class="side-nav-item"><span class="side-nav-link text-muted">Pegawai</span></li>
-                        <li class="side-nav-item"><span class="side-nav-link text-muted">Pengguna</span></li>
-                        <li class="side-nav-item"><span class="side-nav-link text-muted">Peran & Hak Akses</span></li>
-                    </ul>
-                </div>
-            </li>
+            @if ($bolehPengguna || $bolehPeran)
+                <li class="side-nav-title">Organisasi & akses</li>
+                @if ($bolehPengguna)
+                    <li class="side-nav-item">
+                        <a href="{{ route('pengguna.index') }}" class="side-nav-link {{ request()->routeIs('pengguna.*') ? 'active' : '' }}">
+                            <span class="menu-icon"><i data-lucide="users"></i></span><span class="menu-text">Pengguna</span>
+                        </a>
+                    </li>
+                @endif
+                @if ($bolehPeran)
+                    <li class="side-nav-item">
+                        <a href="{{ route('peran.index') }}" class="side-nav-link {{ request()->routeIs('peran.*') ? 'active' : '' }}">
+                            <span class="menu-icon"><i data-lucide="shield-check"></i></span><span class="menu-text">Peran & Hak Akses</span>
+                        </a>
+                    </li>
+                @endif
+            @endif
 
             <li class="side-nav-title">Operasional</li>
-            @php
-                $menuModul = [
-                    ['id' => 'menu-master', 'ikon' => 'package-search', 'nama' => 'Master Data', 'anak' => ['Barang', 'Pelanggan', 'Pemasok', 'Gudang', 'Kas & Bank']],
-                    ['id' => 'menu-persediaan', 'ikon' => 'warehouse', 'nama' => 'Persediaan', 'anak' => ['Saldo Stok', 'Mutasi Stok', 'Stok Awal', 'Transfer', 'Stok Opname']],
-                    ['id' => 'menu-pembelian', 'ikon' => 'shopping-bag', 'nama' => 'Pembelian', 'anak' => ['Permintaan', 'Pesanan Pembelian', 'Penerimaan', 'Faktur', 'Hutang']],
-                    ['id' => 'menu-penjualan', 'ikon' => 'shopping-cart', 'nama' => 'Penjualan & POS', 'anak' => ['Penawaran', 'Pesanan Penjualan', 'Kasir / POS', 'Piutang']],
-                    ['id' => 'menu-pengiriman', 'ikon' => 'truck', 'nama' => 'Pengiriman & Retur', 'anak' => ['Pengiriman', 'Retur Pembelian', 'Retur Penjualan']],
-                    ['id' => 'menu-keuangan', 'ikon' => 'landmark', 'nama' => 'Keuangan', 'anak' => ['Transaksi Kas', 'Akun Keuangan', 'Jurnal Umum']],
-                    ['id' => 'menu-laporan', 'ikon' => 'chart-no-axes-combined', 'nama' => 'Laporan', 'anak' => ['Penjualan', 'Pembelian', 'Persediaan', 'Keuangan', 'Audit']],
-                ];
-            @endphp
-
-            @foreach ($menuModul as $menu)
-                <li class="side-nav-item">
-                    <a data-bs-toggle="collapse" href="#{{ $menu['id'] }}" aria-expanded="false" aria-controls="{{ $menu['id'] }}" class="side-nav-link">
-                        <span class="menu-icon"><i data-lucide="{{ $menu['ikon'] }}"></i></span>
-                        <span class="menu-text">{{ $menu['nama'] }}</span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="{{ $menu['id'] }}">
-                        <ul class="sub-menu">
-                            @foreach ($menu['anak'] as $anak)
-                                <li class="side-nav-item">
-                                    <span class="side-nav-link text-muted">{{ $anak }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </li>
+            @foreach ([
+                ['package-search', 'Master Data'], ['warehouse', 'Persediaan'], ['shopping-bag', 'Pembelian'],
+                ['shopping-cart', 'Penjualan & POS'], ['truck', 'Pengiriman & Retur'], ['landmark', 'Keuangan'],
+                ['chart-no-axes-combined', 'Laporan'],
+            ] as [$ikon, $nama])
+                <li class="side-nav-item"><span class="side-nav-link text-muted"><span class="menu-icon"><i data-lucide="{{ $ikon }}"></i></span><span class="menu-text">{{ $nama }}</span></span></li>
             @endforeach
 
             <li class="side-nav-title">Sistem</li>
+            @if ($bolehAudit)
+                <li class="side-nav-item">
+                    <a href="{{ route('audit.index') }}" class="side-nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}">
+                        <span class="menu-icon"><i data-lucide="history"></i></span><span class="menu-text">Audit Aktivitas</span>
+                    </a>
+                </li>
+            @endif
             <li class="side-nav-item">
-                <span class="side-nav-link text-muted">
-                    <span class="menu-icon"><i data-lucide="settings"></i></span>
-                    <span class="menu-text">Pengaturan</span>
-                </span>
+                <a href="{{ route('profil') }}" class="side-nav-link {{ request()->routeIs('profil*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="user-cog"></i></span><span class="menu-text">Profil Saya</span>
+                </a>
             </li>
         </ul>
     </div>

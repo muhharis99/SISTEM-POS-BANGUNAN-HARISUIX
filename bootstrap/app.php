@@ -1,6 +1,9 @@
 <?php
 
+use App\Console\Commands\SiapkanAksesFaseDua;
 use App\Console\Commands\VerifikasiSkemaDatabase;
+use App\Http\Middleware\PastikanCabangAktif;
+use App\Http\Middleware\PastikanHakAkses;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,11 +16,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->redirectGuestsTo('/masuk');
+        $middleware->alias([
+            'cabang.aktif' => PastikanCabangAktif::class,
+            'hak.akses' => PastikanHakAkses::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Konfigurasi exception khusus akan ditambahkan pada fase terkait.
     })
     ->withCommands([
         VerifikasiSkemaDatabase::class,
+        SiapkanAksesFaseDua::class,
     ])
     ->create();
