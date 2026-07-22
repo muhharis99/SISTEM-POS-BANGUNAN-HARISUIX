@@ -136,9 +136,26 @@ jobs:
         run: php artisan skema:verifikasi --rinci
 
       - name: Run Phase 3 integration tests
+        id: integration
+        continue-on-error: true
         env:
           FASE3_INTEGRATION: true
-        run: php artisan test --filter=FaseTigaMasterDataTest
+        run: |
+          set -o pipefail
+          php artisan test --filter=FaseTigaMasterDataTest 2>&1 | tee laporan-integration-test-fase-3.txt
+
+      - name: Upload Phase 3 integration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-integration-test-fase-3
+          path: laporan-integration-test-fase-3.txt
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Stop when Phase 3 integration failed
+        if: steps.integration.outcome == 'failure'
+        run: exit 1
 
       - name: Run Phase 2 regression tests
         env:
