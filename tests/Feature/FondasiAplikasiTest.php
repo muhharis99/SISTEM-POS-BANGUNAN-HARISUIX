@@ -8,28 +8,21 @@ class FondasiAplikasiTest extends TestCase
 {
     public function test_halaman_utama_mengarah_ke_dashboard(): void
     {
-        $response = $this->get('/');
-
-        $response->assertRedirect('/dashboard');
+        $this->get('/')->assertRedirect('/dashboard');
     }
 
-    public function test_dashboard_fondasi_dapat_dibuka(): void
+    public function test_tamu_diarahkan_ke_halaman_masuk(): void
     {
-        $response = $this->get('/dashboard');
+        $this->get('/dashboard')->assertRedirect('/masuk');
+    }
+
+    public function test_halaman_masuk_memakai_asset_lokal_ubold(): void
+    {
+        $response = $this->get('/masuk');
 
         $response
             ->assertOk()
-            ->assertSee('Dashboard Fondasi')
-            ->assertSee('Laravel 13')
-            ->assertSee('UBold');
-    }
-
-    public function test_dashboard_memakai_asset_lokal_ubold(): void
-    {
-        $response = $this->get('/dashboard');
-
-        $response
-            ->assertOk()
+            ->assertSee('Sistem POS Toko Bangunan')
             ->assertSee('assets/admin/css/app.min.css', false)
             ->assertSee('assets/admin/js/vendors.min.js', false)
             ->assertDontSee('cdn.jsdelivr.net', false)
