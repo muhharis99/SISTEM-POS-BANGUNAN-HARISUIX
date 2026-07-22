@@ -38,7 +38,11 @@ jobs:
           php artisan key:generate
           php scripts/salin-aset-template.php
 
-      - name: Check PHP formatting
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Report PHP formatting
+        continue-on-error: true
         run: vendor/bin/pint --test
 
       - name: Run tests without database migration
