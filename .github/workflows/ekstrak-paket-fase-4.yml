@@ -1,0 +1,70 @@
+name: Ekstrak Paket Fase 4
+
+on:
+  push:
+    branches:
+      - fase-4-persediaan
+    paths:
+      - '.github/workflows/ekstrak-paket-fase-4.yml'
+      - '.fase4-paket/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/ekstrak-paket-fase-4.yml'
+      - '.fase4-paket/**'
+
+permissions:
+  contents: read
+
+jobs:
+  ekstrak:
+    if: github.event_name == 'push' || github.head_ref == 'fase-4-persediaan'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch Fase 4
+        uses: actions/checkout@v4
+        with:
+          ref: fase-4-persediaan
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: none
+
+      - name: Decode dan audit paket
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/fase4-out
+          cat .fase4-paket/part-* | base64 --decode > /tmp/fase4-package.tar.gz
+          test -s /tmp/fase4-package.tar.gz
+          gzip -t /tmp/fase4-package.tar.gz
+          tar -tzf /tmp/fase4-package.tar.gz > /tmp/fase4-package-files.txt
+
+          if grep -E '(^|/)\.\.(/|$)|^/' /tmp/fase4-package-files.txt; then
+            echo 'Paket mengandung path absolut atau parent traversal.' >&2
+            exit 1
+          fi
+
+          if grep -E '(^|/)(struktur_database_toko_bangunan\.sql|database/migrations/|vendor/|\.git/)' /tmp/fase4-package-files.txt; then
+            echo 'Paket mencoba mengubah berkas yang dilarang.' >&2
+            exit 1
+          fi
+
+          tar -xzf /tmp/fase4-package.tar.gz -C /tmp/fase4-out
+          find /tmp/fase4-out -name '*.php' -print0 | xargs -0 -n1 php -l
+          tar -czf /tmp/implementasi-fase-4.tar.gz -C /tmp/fase4-out .
+          sha256sum /tmp/implementasi-fase-4.tar.gz > /tmp/implementasi-fase-4.sha256
+
+      - name: Upload implementasi terverifikasi
+        uses: actions/upload-artifact@v4
+        with:
+          name: implementasi-fase-4-terverifikasi
+          path: |
+            /tmp/implementasi-fase-4.tar.gz
+            /tmp/implementasi-fase-4.sha256
+          retention-days: 7
+          if-no-files-found: error
