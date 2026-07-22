@@ -32,6 +32,14 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Upload resolved Composer lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-lock
+          path: composer.lock
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Prepare environment
         run: |
           cp .env.example .env
