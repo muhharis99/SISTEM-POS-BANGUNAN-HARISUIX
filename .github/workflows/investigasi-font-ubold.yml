@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fase-1-fondasi
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -109,7 +112,6 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import json
           import re
           from urllib.parse import urljoin
           from urllib.request import Request, urlopen
