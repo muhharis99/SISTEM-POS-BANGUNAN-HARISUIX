@@ -6,21 +6,27 @@ use App\Models\Cabang;
 use App\Models\Pengguna;
 use App\Models\PenggunaPeran;
 use App\Models\Peran;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class FaseDuaAutentikasiTest extends TestCase
 {
-    use DatabaseTransactions;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        if (! env('FASE2_INTEGRATION', false)) {
+        if (! filter_var(env('FASE2_INTEGRATION', false), FILTER_VALIDATE_BOOL)) {
             $this->markTestSkipped('Test integration Fase 2 hanya dijalankan pada job MySQL khusus.');
         }
+
+        DB::beginTransaction();
+
+        $this->beforeApplicationDestroyed(function (): void {
+            if (DB::connection()->transactionLevel() > 0) {
+                DB::rollBack();
+            }
+        });
     }
 
     public function test_administrator_dapat_masuk_dan_membuka_dashboard(): void
