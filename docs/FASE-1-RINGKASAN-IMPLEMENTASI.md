@@ -189,7 +189,10 @@ Workflow `Fase 1 Smoke Test` berhasil pada PHP 8.4 dengan langkah:
 - penyalinan asset UBold;
 - pemeriksaan sintaks PHP;
 - pemeriksaan format Pint;
-- unit test dan feature test.
+- unit test dan feature test;
+- impor SQL final langsung ke layanan MySQL 8 disposable;
+- verifikasi tabel, kolom, tipe, nullable, default, index, dan foreign key;
+- penegasan jumlah tepat 70 tabel bisnis dan 3 view.
 
 Status otomatis saat ringkasan ini diperbarui: **berhasil**.
 
@@ -205,8 +208,8 @@ docs/FASE-1-RINGKASAN-IMPLEMENTASI.md
 
 ## Hal yang belum dilakukan
 
-- migration belum dijalankan pada MySQL development milik pengguna;
-- pemeriksa skema belum dijalankan terhadap database nyata;
+- migration Laravel belum dijalankan pada MySQL development milik pengguna;
+- pemeriksa skema belum dijalankan terhadap database development milik pengguna;
 - tampilan belum diperiksa melalui browser pengguna;
 - request font relatif `css2` dan variannya belum diverifikasi melalui Network browser;
 - backup belum dijalankan dan diuji restore pada lingkungan pengguna;
