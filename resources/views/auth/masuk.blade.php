@@ -33,11 +33,7 @@
                                     <label for="kata_sandi" class="form-label">Kata Sandi</label>
                                     <input type="password" class="form-control" id="kata_sandi" name="kata_sandi" autocomplete="current-password" required>
                                 </div>
-                                <div class="form-check mb-3">
-                                    <input type="hidden" name="ingat_saya" value="0">
-                                    <input type="checkbox" class="form-check-input" id="ingat_saya" name="ingat_saya" value="1">
-                                    <label class="form-check-label" for="ingat_saya">Ingat saya</label>
-                                </div>
+                                <div class="alert alert-light border small">Session berakhir otomatis sesuai kebijakan aplikasi. Fitur “ingat saya” tidak digunakan karena skema paten tidak memiliki token persisten.</div>
                                 <button type="submit" class="btn btn-primary w-100">Masuk</button>
                             </form>
                         </div>
