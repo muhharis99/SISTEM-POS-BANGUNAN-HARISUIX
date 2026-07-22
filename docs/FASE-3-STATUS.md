@@ -4,8 +4,9 @@
 
 - Fase 1: lulus.
 - Fase 2: lulus dan merged ke `main`.
-- Fase 3: implementasi selesai dan seluruh CI otomatis hijau pada branch `fase-3-master-data` melalui Draft PR #4.
-- Fase 3 masih belum lulus secara formal sampai checklist manual diterima dan pemilik menyatakan eksplisit `Fase 3 lulus`.
+- Fase 3: **lulus secara formal pada 22 Juli 2026** setelah implementasi, seluruh CI otomatis, dan checklist manual diterima pemilik.
+- Branch sumber: `fase-3-master-data`.
+- Pull request: PR #4 menuju `main`.
 - Fase 4: belum dimulai.
 
 ## Hasil otomatis
@@ -21,14 +22,24 @@
 - Full regression test suite Fase 1–Fase 3 berhasil.
 - Seluruh workflow asset UBold/Nunito dan audit auto-merge berhasil.
 
+## Keputusan pemilik
+
+Pemilik menyatakan eksplisit:
+
+```text
+Fase 3 lulus
+```
+
+Dengan keputusan tersebut, PR #4 boleh diubah menjadi siap ditinjau dan digabung ke `main` setelah CI pada commit checkpoint terakhir tetap hijau.
+
 ## Pengaman
 
 - Tidak ada perubahan skema paten.
 - Tidak ada CDN eksternal.
 - Backup dibuat sebelum migration dan sebelum data/testing Fase 3 pada CI.
 - Regression test Fase 1 dan Fase 2 tetap dijalankan.
-- PR #4 tidak boleh di-merge atau diubah menjadi ready sebelum pemilik menyatakan `Fase 3 lulus`.
-- Auto-merge tidak boleh diaktifkan.
+- Auto-merge tidak diaktifkan; penggabungan dilakukan eksplisit dengan penguncian SHA head.
+- Fase 4 tidak boleh dimulai tanpa instruksi terpisah dari pemilik.
 
 ## Dokumen
 
