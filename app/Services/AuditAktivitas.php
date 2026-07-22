@@ -26,8 +26,8 @@ class AuditAktivitas
             'nama_tabel' => $tabel,
             'id_referensi' => $referensi,
             'keterangan' => $keterangan,
-            'data_sebelum' => $sebelum === null ? null : json_encode($sebelum, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'data_sesudah' => $sesudah === null ? null : json_encode($sesudah, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'data_sebelum' => $sebelum,
+            'data_sesudah' => $sesudah,
             'alamat_ip' => $request->ip(),
             'peramban' => $request->userAgent(),
         ]);
