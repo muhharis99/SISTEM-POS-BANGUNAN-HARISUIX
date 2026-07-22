@@ -2,31 +2,41 @@
 
 ## Status
 
-**Siap diuji, belum lulus.**
+**Siap diuji manual, belum lulus.**
 
 Fase 2 tidak boleh dimulai sebelum pemilik proyek menyatakan secara eksplisit `Fase 1 lulus`.
 
-## Branch pengerjaan
+## Branch dan pull request
 
 ```text
-fase-1-fondasi
+Branch: fase-1-fondasi
+Draft PR: #1
+Target: main
 ```
 
 Branch belum digabung ke `main` dan tag `fase-1-selesai` belum dibuat.
 
 ## Fondasi Laravel
 
-- Laravel 13 melalui `laravel/framework:^13.0`.
-- PHP `^8.4`.
-- MySQL sebagai koneksi utama.
-- Zona waktu `Asia/Jakarta`.
-- Locale `id` dan faker `id_ID`.
-- Entry point web dan Artisan.
-- Route kesehatan `/up`.
-- Route dashboard `/dashboard`.
-- Session berbasis file.
-- Cache berbasis file.
-- Queue sinkron.
+Constraint utama pada `composer.json`:
+
+- PHP `^8.4`;
+- `laravel/framework:^13.8`;
+- `laravel/tinker:^3.0`.
+
+Dependency sudah dikunci melalui `composer.lock` hasil resolusi CI pada PHP 8.4. Versi framework yang terkunci saat Fase 1 adalah Laravel `v13.21.1`.
+
+Konfigurasi aplikasi:
+
+- MySQL sebagai koneksi utama;
+- zona waktu `Asia/Jakarta`;
+- locale `id` dan faker `id_ID`;
+- entry point web dan Artisan;
+- route kesehatan `/up`;
+- route dashboard `/dashboard`;
+- session berbasis file;
+- cache berbasis file;
+- queue sinkron.
 
 Driver file/sync dipilih agar Laravel tidak membuat tabel `sessions`, `cache`, `jobs`, `job_batches`, atau `failed_jobs` di luar SQL final.
 
@@ -127,6 +137,18 @@ public/assets/admin/
 
 Tidak ada Tailwind, Livewire, Inertia, template pengganti, atau CDN frontend yang ditambahkan.
 
+Versi vendor yang berhasil diidentifikasi langsung dari asset telah dicatat dalam:
+
+```text
+docs/FASE-1-INVENTARIS-ASSET-UBOLD.md
+```
+
+Temuan import font relatif yang belum dipetakan telah dicatat tanpa mengubah asset:
+
+```text
+docs/FASE-1-CATATAN-ASSET-FONT-UBOLD.md
+```
+
 ## Backup
 
 Tersedia:
@@ -140,10 +162,11 @@ Backup disimpan lokal di `backups/database/` dan tidak masuk Git. Checksum SHA-2
 
 ## Automated test
 
-File:
+File utama:
 
 ```text
 tests/Feature/FondasiAplikasiTest.php
+tests/Unit/StrukturDatabaseFinalTest.php
 ```
 
 Cakupan:
@@ -152,12 +175,29 @@ Cakupan:
 - render dashboard;
 - identitas fondasi;
 - penggunaan asset UBold lokal;
-- pencegahan CDN umum.
+- pencegahan CDN umum;
+- penguncian jumlah 70 tabel bisnis dalam SQL;
+- penguncian tiga view yang disepakati;
+- pencegahan tabel framework dan Spatie di dalam SQL final.
+
+## Hasil GitHub Actions
+
+Workflow `Fase 1 Smoke Test` berhasil pada PHP 8.4 dengan langkah:
+
+- validasi `composer.json`;
+- instalasi dependency dari `composer.lock`;
+- penyalinan asset UBold;
+- pemeriksaan sintaks PHP;
+- pemeriksaan format Pint;
+- unit test dan feature test.
+
+Status otomatis saat ringkasan ini diperbarui: **berhasil**.
 
 ## Dokumentasi Fase 1
 
 ```text
 docs/FASE-1-INVENTARIS-ASSET-UBOLD.md
+docs/FASE-1-CATATAN-ASSET-FONT-UBOLD.md
 docs/FASE-1-SOP-BACKUP-DAN-VERSION-CONTROL.md
 docs/FASE-1-VERIFIKASI-DAN-TESTING.md
 docs/FASE-1-RINGKASAN-IMPLEMENTASI.md
@@ -165,11 +205,11 @@ docs/FASE-1-RINGKASAN-IMPLEMENTASI.md
 
 ## Hal yang belum dilakukan
 
-- dependency Composer belum diuji pada mesin pengguna;
-- migration belum dijalankan pada MySQL pengguna;
+- migration belum dijalankan pada MySQL development milik pengguna;
 - pemeriksa skema belum dijalankan terhadap database nyata;
 - tampilan belum diperiksa melalui browser pengguna;
-- backup belum diuji restore;
+- request font relatif `css2` dan variannya belum diverifikasi melalui Network browser;
+- backup belum dijalankan dan diuji restore pada lingkungan pengguna;
 - branch belum digabung;
 - tag fase belum dibuat;
 - Fase 1 belum dinyatakan lulus.
