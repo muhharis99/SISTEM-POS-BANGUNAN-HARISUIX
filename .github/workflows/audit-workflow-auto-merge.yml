@@ -29,10 +29,12 @@ jobs:
           import re
 
           root = Path('.github/workflows')
+          audit_file = Path('.github/workflows/audit-workflow-auto-merge.yml')
           files = sorted([
               *root.glob('*.yml'),
               *root.glob('*.yaml'),
           ])
+          files = [path for path in files if path != audit_file]
 
           event_patterns = [
               r'issue_comment',
@@ -55,6 +57,7 @@ jobs:
           report.append('========================================')
           report.append('')
           report.append(f'Jumlah workflow diperiksa: {len(files)}')
+          report.append('File audit dikecualikan agar pola pencarian internal tidak menjadi false positive.')
           report.append('')
 
           findings = []
