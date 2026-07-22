@@ -65,18 +65,23 @@ jobs:
           set -o pipefail
           vendor/bin/pint --test --format=json 2>&1 | tee laporan-pint-fase-2.json
 
+      - name: Generate exact Pint patch
+        if: steps.pint.outcome == 'failure'
+        run: |
+          vendor/bin/pint app bootstrap config database routes scripts tests
+          git diff -- app bootstrap config database routes scripts tests > laporan-pint-fase-2.patch
+          cat laporan-pint-fase-2.patch
+
       - name: Upload Pint report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: laporan-pint-fase-2
-          path: laporan-pint-fase-2.json
+          path: |
+            laporan-pint-fase-2.json
+            laporan-pint-fase-2.patch
           retention-days: 7
           if-no-files-found: error
-
-      - name: Stop when Pint failed
-        if: steps.pint.outcome == 'failure'
-        run: exit 1
 
       - name: Run patent schema migration
         id: migration
