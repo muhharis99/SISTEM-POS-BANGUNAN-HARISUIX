@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test-fondasi:
@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.sha }}
 
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -43,19 +41,8 @@ jobs:
       - name: Check PHP syntax
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Format PHP with Pint
-        run: vendor/bin/pint
-
-      - name: Commit formatting corrections
-        if: github.event_name == 'push' && github.ref == 'refs/heads/fase-1-fondasi'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app bootstrap config database routes scripts tests
-          if ! git diff --cached --quiet; then
-            git commit -m "style(fase-1): rapikan format kode dengan Pint"
-            git push origin HEAD:fase-1-fondasi
-          fi
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
 
       - name: Run tests without database migration
         run: php artisan test
