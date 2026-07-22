@@ -1,0 +1,85 @@
+name: Verifikasi Font Nunito Lokal
+
+on:
+  push:
+    branches:
+      - fase-1-fondasi
+    paths:
+      - 'template_admin/assets/fonts/nunito/**'
+      - 'scripts/salin-aset-template.php'
+      - '.github/workflows/bangun-font-nunito-lokal.yml'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifikasi-font:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup fontTools
+        run: |
+          python3 -m pip install --disable-pip-version-check --no-cache-dir 'fonttools[woff]==4.63.0'
+
+      - name: Verifikasi file, checksum, axis, dan style
+        run: |
+          set -euo pipefail
+
+          NORMAL='template_admin/assets/fonts/nunito/Nunito-Variable.woff2'
+          ITALIC='template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2'
+          LICENSE='template_admin/assets/fonts/nunito/OFL.txt'
+          SOURCE='template_admin/assets/fonts/nunito/SUMBER.md'
+
+          test -f "$NORMAL"
+          test -f "$ITALIC"
+          test -f "$LICENSE"
+          test -f "$SOURCE"
+
+          grep -F "$(sha256sum "$NORMAL" | awk '{print $1}')" "$SOURCE"
+          grep -F "$(sha256sum "$ITALIC" | awk '{print $1}')" "$SOURCE"
+          grep -F "$(sha256sum "$LICENSE" | awk '{print $1}')" "$SOURCE"
+          grep -F 'SIL OPEN FONT LICENSE Version 1.1' "$LICENSE"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from fontTools.ttLib import TTFont
+
+          pairs = [
+              (
+                  Path('template_admin/assets/fonts/nunito/Nunito-Variable.woff2'),
+                  'normal',
+              ),
+              (
+                  Path('template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2'),
+                  'italic',
+              ),
+          ]
+
+          for path, expected_style in pairs:
+              font = TTFont(path)
+              if font.flavor != 'woff2':
+                  raise SystemExit(f'{path} bukan WOFF2.')
+              if 'fvar' not in font:
+                  raise SystemExit(f'{path} bukan variable font.')
+
+              axis = next((item for item in font['fvar'].axes if item.axisTag == 'wght'), None)
+              if axis is None:
+                  raise SystemExit(f'Axis wght tidak ditemukan pada {path}.')
+              if int(axis.minValue) != 300 or int(axis.maxValue) != 700:
+                  raise SystemExit(
+                      f'Rentang axis {path} tidak sesuai: {axis.minValue}–{axis.maxValue}'
+                  )
+
+              italic_angle = float(font['post'].italicAngle)
+              if expected_style == 'normal' and italic_angle != 0:
+                  raise SystemExit(f'Font normal memiliki italicAngle {italic_angle}.')
+              if expected_style == 'italic' and italic_angle == 0:
+                  raise SystemExit('Font italic tidak memiliki italicAngle.')
+          PY

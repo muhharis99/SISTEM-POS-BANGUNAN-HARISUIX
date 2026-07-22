@@ -45,8 +45,15 @@ jobs:
           css_path = Path('public/assets/admin/css/app.min.css')
           css = css_path.read_text(encoding='utf-8-sig')
           imports = re.findall(r'@import\s+url\(([^)]+)\)', css, flags=re.I)
-          families = sorted(set(re.findall(r'(?:font-family|--[\w-]*font[\w-]*family)\s*:\s*([^;}]+)', css, flags=re.I)))
           candidates = sorted(str(p) for p in Path('.').rglob('css2*') if p.is_file() and '.git/' not in str(p))
+          custom_font_vars = sorted(set(
+              f'{name}: {value.strip()}'
+              for name, value in re.findall(r'(--[^:;{}]*font[^:;{}]*):\s*([^;{}]+)', css, flags=re.I)
+          ))
+          font_family_values = sorted(set(
+              value.strip()
+              for value in re.findall(r'font-family\s*:\s*([^;{}]+)', css, flags=re.I)
+          ))
 
           with open('laporan-font-ubold.txt', 'w', encoding='utf-8') as report:
               report.write('INVESTIGASI FONT UBOLD\n')
@@ -61,9 +68,12 @@ jobs:
                       report.write(f'- {item}\n')
               else:
                   report.write('- TIDAK ADA\n')
-              report.write('\nDeklarasi font-family yang ditemukan dalam app.min.css:\n')
-              for item in families:
-                  report.write(f'- {item.strip()}\n')
+              report.write('\nCustom property font pada app.min.css:\n')
+              for item in custom_font_vars:
+                  report.write(f'- {item}\n')
+              report.write('\nNilai font-family pada app.min.css:\n')
+              for item in font_family_values:
+                  report.write(f'- {item}\n')
           PY
 
       - name: Start Laravel development server
@@ -112,6 +122,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import json
           import re
           from urllib.parse import urljoin
           from urllib.request import Request, urlopen
@@ -122,9 +133,26 @@ jobs:
           imports = re.findall(r'@import\s+url\(([^)]+)\)', css, flags=re.I)
           resolved = [urljoin(base, item.strip('"\'')) for item in imports]
 
-          netlog_text = Path('font-netlog.json').read_text(encoding='utf-8', errors='replace') if Path('font-netlog.json').exists() else ''
-          urls = sorted(set(re.findall(r'https?://[^"\\\s]+', netlog_text)))
-          relevant = [u for u in urls if ('css2' in u.lower() or 'fonts.googleapis.com' in u.lower() or 'fonts.gstatic.com' in u.lower())]
+          actual_urls = set()
+          if Path('font-netlog.json').exists():
+              netlog = json.loads(Path('font-netlog.json').read_text(encoding='utf-8', errors='replace'))
+
+              def walk(value):
+                  if isinstance(value, dict):
+                      for key, child in value.items():
+                          if key == 'url' and isinstance(child, str) and child.startswith(('http://', 'https://')):
+                              actual_urls.add(child)
+                          walk(child)
+                  elif isinstance(value, list):
+                      for child in value:
+                          walk(child)
+
+              walk(netlog)
+
+          relevant_actual = sorted(
+              url for url in actual_urls
+              if 'css2' in url.lower() or 'fonts.googleapis.com' in url.lower() or 'fonts.gstatic.com' in url.lower()
+          )
 
           with open('laporan-font-ubold.txt', 'a', encoding='utf-8') as report:
               report.write('\n\nResolusi URL oleh aturan URL browser:\n')
@@ -142,15 +170,15 @@ jobs:
                   except URLError as exc:
                       report.write(f'- ERROR {url} ({exc.reason})\n')
 
-              report.write('\nRequest relevan yang benar-benar tercatat pada Chrome NetLog:\n')
-              if relevant:
-                  for url in relevant:
+              report.write('\nRequest URL relevan yang benar-benar tercatat pada Chrome NetLog:\n')
+              if relevant_actual:
+                  for url in relevant_actual:
                       report.write(f'- {url}\n')
               else:
                   report.write('- TIDAK ADA\n')
 
-              external = [u for u in relevant if not u.startswith('http://127.0.0.1:8000/')]
-              report.write('\nRequest eksternal font yang tercatat:\n')
+              external = [url for url in relevant_actual if not url.startswith('http://127.0.0.1:8000/')]
+              report.write('\nRequest URL eksternal font yang benar-benar tercatat:\n')
               if external:
                   for url in external:
                       report.write(f'- {url}\n')
@@ -159,6 +187,57 @@ jobs:
           PY
 
           kill "$(cat laravel-server.pid)" || true
+
+      - name: Inspect source references and local font files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          roots = [Path('template_admin'), Path('public/assets/admin')]
+          text_suffixes = {'.css', '.scss', '.sass', '.html', '.htm', '.js', '.json', '.map'}
+          font_suffixes = {'.woff', '.woff2', '.ttf', '.otf', '.eot'}
+          needles = re.compile(r'fonts\.googleapis\.com|fonts\.gstatic\.com|(?:^|[^\w])css2(?:-\d+)?|Nunito', re.I)
+          references = []
+          font_files = []
+
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in root.rglob('*'):
+                  if not path.is_file():
+                      continue
+                  if path.suffix.lower() in font_suffixes:
+                      font_files.append(str(path))
+                  if path.suffix.lower() not in text_suffixes or path.stat().st_size > 8_000_000:
+                      continue
+                  text = path.read_text(encoding='utf-8', errors='ignore')
+                  for match in needles.finditer(text):
+                      start = max(0, match.start() - 100)
+                      end = min(len(text), match.end() + 180)
+                      snippet = re.sub(r'\s+', ' ', text[start:end]).strip()
+                      references.append((str(path), snippet))
+                      if len(references) >= 100:
+                          break
+                  if len(references) >= 100:
+                      break
+
+          with open('laporan-font-ubold.txt', 'a', encoding='utf-8') as report:
+              report.write('\n\nFile font lokal di template/runtime:\n')
+              if font_files:
+                  for item in sorted(set(font_files)):
+                      report.write(f'- {item}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+
+              report.write('\nReferensi sumber terkait Google Fonts/css2/Nunito:\n')
+              if references:
+                  for path, snippet in references:
+                      report.write(f'- {path}: {snippet}\n')
+              else:
+                  report.write('- TIDAK ADA\n')
+          PY
+
           cat laporan-font-ubold.txt
 
       - name: Upload investigation report

@@ -64,6 +64,73 @@ foreach ($iterator as $item) {
     $jumlahBerkas++;
 }
 
+$lokasiCssAplikasi = $tujuan.'/css/app.min.css';
+$lokasiFontNormal = $tujuan.'/fonts/nunito/Nunito-Variable.woff2';
+$lokasiFontItalic = $tujuan.'/fonts/nunito/Nunito-Italic-Variable.woff2';
+
+foreach ([$lokasiCssAplikasi, $lokasiFontNormal, $lokasiFontItalic] as $berkasWajib) {
+    if (! is_file($berkasWajib)) {
+        fwrite(STDERR, "Berkas wajib asset lokal tidak ditemukan: {$berkasWajib}\n");
+        exit(1);
+    }
+}
+
+$blokImportRusak = '@import url(../../../../css2);'
+    .'@import url(../../../../css2-1);'
+    .'@import url(../../../../css2-2);'
+    .'@import url(../../../../css2-3);'
+    .'@import url(../../../../css2-4);'
+    .'@import url(../../../../css2-5);'
+    .'@import url(../../../../css2-6);'
+    .'@import url(../../../../css2-7);'
+    .'@import url(../../../../css2-6);'
+    .'@import url(../../../../css2-8);';
+
+$blokFontLokal = '@font-face{font-family:"Nunito";font-style:normal;font-weight:300 700;font-display:swap;'
+    .'src:url("../fonts/nunito/Nunito-Variable.woff2") format("woff2")}'
+    .'@font-face{font-family:"Nunito";font-style:italic;font-weight:300 700;font-display:swap;'
+    .'src:url("../fonts/nunito/Nunito-Italic-Variable.woff2") format("woff2")}';
+
+$isiCss = file_get_contents($lokasiCssAplikasi);
+
+if ($isiCss === false) {
+    fwrite(STDERR, "Gagal membaca CSS aplikasi: {$lokasiCssAplikasi}\n");
+    exit(1);
+}
+
+$jumlahPenggantian = 0;
+$isiCssDenganFontLokal = str_replace(
+    $blokImportRusak,
+    $blokFontLokal,
+    $isiCss,
+    $jumlahPenggantian
+);
+
+if ($jumlahPenggantian !== 1) {
+    fwrite(
+        STDERR,
+        "Blok import css2* harus ditemukan tepat satu kali. Ditemukan: {$jumlahPenggantian}.\n"
+    );
+    exit(1);
+}
+
+if (file_put_contents($lokasiCssAplikasi, $isiCssDenganFontLokal) === false) {
+    fwrite(STDERR, "Gagal menulis CSS aplikasi dengan font lokal.\n");
+    exit(1);
+}
+
+$hashCss = hash_file('sha256', $lokasiCssAplikasi);
+
+if ($hashCss === false) {
+    fwrite(STDERR, "Gagal menghitung checksum CSS aplikasi setelah penggantian font.\n");
+    exit(1);
+}
+
+$manifest['css/app.min.css'] = [
+    'sha256' => $hashCss,
+    'ukuran_byte' => filesize($lokasiCssAplikasi),
+];
+
 ksort($manifest);
 
 $folderManifest = dirname($lokasiManifest);
@@ -78,6 +145,9 @@ $isiManifest = json_encode([
     'tujuan' => 'public/assets/admin',
     'algoritma' => 'sha256',
     'jumlah_berkas' => $jumlahBerkas,
+    'perubahan_terkontrol' => [
+        'css/app.min.css' => 'Import css2* yang 404 diganti dua @font-face Nunito variable lokal.',
+    ],
     'dibuat_pada' => date(DATE_ATOM),
     'berkas' => $manifest,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -88,5 +158,6 @@ if ($isiManifest === false || file_put_contents($lokasiManifest, $isiManifest."\
 }
 
 fwrite(STDOUT, "Aset UBold berhasil disalin tanpa pembaruan vendor.\n");
+fwrite(STDOUT, "Import css2* berhasil diganti dengan Nunito variable font lokal.\n");
 fwrite(STDOUT, "Jumlah berkas: {$jumlahBerkas}\n");
 fwrite(STDOUT, "Manifest SHA-256: {$lokasiManifest}\n");

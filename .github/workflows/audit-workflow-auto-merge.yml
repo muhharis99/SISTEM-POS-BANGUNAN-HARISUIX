@@ -1,0 +1,101 @@
+name: Audit Workflow Auto Merge
+
+on:
+  push:
+    branches:
+      - fase-1-fondasi
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pindai event komentar, review, dan logika merge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.github/workflows')
+          audit_file = Path('.github/workflows/audit-workflow-auto-merge.yml')
+          files = sorted([
+              *root.glob('*.yml'),
+              *root.glob('*.yaml'),
+          ])
+          files = [path for path in files if path != audit_file]
+
+          event_patterns = [
+              r'issue_comment',
+              r'pull_request_review',
+              r'pull_request_review_comment',
+          ]
+          merge_patterns = [
+              r'auto[-_ ]?merge',
+              r'gh\s+pr\s+merge',
+              r'pulls/.*/merge',
+              r'merge_pull_request',
+              r'enable_auto_merge',
+              r'contains\s*\([^\n]*(?:ok|lgtm|approve)',
+              r'github\.event\.comment\.body',
+              r'github\.event\.review\.state',
+          ]
+
+          report = []
+          report.append('AUDIT WORKFLOW KOMENTAR DAN AUTO-MERGE')
+          report.append('========================================')
+          report.append('')
+          report.append(f'Jumlah workflow diperiksa: {len(files)}')
+          report.append('File audit dikecualikan agar pola pencarian internal tidak menjadi false positive.')
+          report.append('')
+
+          findings = []
+
+          for path in files:
+              text = path.read_text(encoding='utf-8', errors='replace')
+              matched_events = [p for p in event_patterns if re.search(p, text, re.I)]
+              matched_merge = [p for p in merge_patterns if re.search(p, text, re.I)]
+
+              report.append(f'FILE: {path}')
+              report.append(f'- event komentar/review: {", ".join(matched_events) if matched_events else "TIDAK ADA"}')
+              report.append(f'- logika merge/chatops: {", ".join(matched_merge) if matched_merge else "TIDAK ADA"}')
+              report.append('')
+
+              if matched_events or matched_merge:
+                  findings.append(path)
+                  report.append('----- ISI FILE LENGKAP -----')
+                  report.extend(text.splitlines())
+                  report.append('----- AKHIR FILE -----')
+                  report.append('')
+
+          report.append('KESIMPULAN')
+          report.append('----------')
+          if findings:
+              report.append('Workflow yang perlu ditinjau lebih lanjut:')
+              report.extend(f'- {path}' for path in findings)
+          else:
+              report.append('Tidak ditemukan workflow yang listen ke event komentar/review atau menjalankan logika auto-merge/ChatOps.')
+
+          output = '\n'.join(report) + '\n'
+          Path('laporan-audit-workflow-auto-merge.txt').write_text(output, encoding='utf-8')
+          print(output)
+          PY
+
+      - name: Upload laporan audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-audit-workflow-auto-merge
+          path: laporan-audit-workflow-auto-merge.txt
+          retention-days: 7
+          if-no-files-found: error

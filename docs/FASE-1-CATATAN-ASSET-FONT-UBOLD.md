@@ -1,10 +1,10 @@
-# Fase 1 — Catatan Import Font UBold
+# Fase 1 — Pemasangan Font Nunito Lokal UBold
 
 ## Status
 
-**Temuan terbuka — belum diubah sepihak.**
+**Pemasangan dan pengujian otomatis selesai — Fase 1 tetap belum lulus sampai pemilik menyatakan eksplisit `Fase 1 lulus`.**
 
-## Temuan
+## Masalah awal
 
 Berkas berikut:
 
@@ -12,55 +12,156 @@ Berkas berikut:
 template_admin/assets/css/app.min.css
 ```
 
-memuat beberapa import relatif pada awal berkas:
+memuat import relatif `css2`, `css2-1` sampai `css2-8`. Browser menyelesaikannya menjadi `/css2*` pada origin aplikasi dan seluruh request menghasilkan HTTP 404.
 
-```css
-@import url(../../../../css2);
-@import url(../../../../css2-1);
-@import url(../../../../css2-2);
-@import url(../../../../css2-3);
-@import url(../../../../css2-4);
-@import url(../../../../css2-5);
-@import url(../../../../css2-6);
-@import url(../../../../css2-7);
-@import url(../../../../css2-8);
+Tidak ditemukan request aktual ke:
+
+```text
+fonts.googleapis.com
+fonts.gstatic.com
 ```
 
-Berkas extensionless `css2`, `css2-1`, dan seterusnya belum ditemukan pada path yang dapat dipetakan dari repository melalui pemeriksaan konektor GitHub.
+Pemindaian rekursif terhadap seluruh 528 file dalam `template_admin/`, termasuk root dan semua subfolder di luar `assets/`, memastikan file `css2*` dan berkas Nunito tidak tersedia pada paket asli.
 
-## Dampak potensial
+## Keputusan pemilik
 
-Apabila request tersebut menghasilkan `404`, browser akan menggunakan font fallback sistem. Komponen Bootstrap dan UBold tetap dapat tampil, tetapi tipografi mungkin berbeda dari preview template asli.
+- self-host Nunito;
+- sumber resmi repository `google/fonts`;
+- format akhir dua variable WOFF2;
+- rentang weight 300–700;
+- style normal dan italic;
+- lisensi SIL Open Font License 1.1;
+- hanya blok import `css2*` yang boleh diganti pada CSS runtime.
 
-## Tindakan yang sengaja belum dilakukan
+## Sumber dan hasil font
 
-- Tidak mengganti import dengan Google Fonts CDN.
-- Tidak menghapus import dari `app.min.css`.
-- Tidak menebak isi berkas font.
-- Tidak mengunduh font versi lain.
-- Tidak mengubah asset minified UBold.
+Sumber dikunci pada commit Google Fonts:
 
-Langkah-langkah tersebut ditahan agar aturan penguncian asset tetap dipatuhi.
+```text
+684b69db51d59a3137ec0152fa3a3afc6f1b3814
+```
 
-## Verifikasi manual wajib
+File sumber:
 
-Pada saat dashboard dijalankan:
+```text
+ofl/nunito/Nunito[wght].ttf
+ofl/nunito/Nunito-Italic[wght].ttf
+ofl/nunito/OFL.txt
+```
 
-1. Buka Developer Tools browser.
-2. Buka tab **Network**.
-3. Muat ulang `/dashboard`.
-4. Cari request dengan nama `css2`, `css2-1`, dan seterusnya.
-5. Catat status HTTP dan URL final masing-masing request.
-6. Bandingkan tipografi dengan halaman HTML asli di `template_admin/`.
+FontTools 4.63.0 digunakan untuk membatasi axis `wght` menjadi 300–700 dan mengubah font ke WOFF2.
 
-## Keputusan setelah pengujian
+File hasil:
 
-Jika request berhasil, tidak ada perubahan yang diperlukan.
+```text
+template_admin/assets/fonts/nunito/Nunito-Variable.woff2
+template_admin/assets/fonts/nunito/Nunito-Italic-Variable.woff2
+template_admin/assets/fonts/nunito/OFL.txt
+template_admin/assets/fonts/nunito/SUMBER.md
+```
 
-Jika request gagal, pemilik proyek perlu memilih salah satu tindakan berikut:
+SHA-256:
 
-1. Menyediakan salinan persis berkas sumber font yang digunakan template.
-2. Mengizinkan font lokal pengganti yang dicatat versinya.
-3. Mengizinkan font fallback sistem.
+```text
+Nunito-Variable.woff2
+38a5cfb67d0b85874f3954c63a6448e818150508d375db114b1c409bb942bd15
 
-Tidak ada opsi yang diterapkan sebelum hasil Network browser tersedia dan pemilik proyek memberikan persetujuan.
+Nunito-Italic-Variable.woff2
+e8a824fcc2f755d018a0cb72acf9e3a75d909ac63aa042b58c5187525d034188
+
+OFL.txt
+580df76c95a1ec5ab878ceb25bb3d85c6a076804e9c970c8c6972aea775fdf65
+```
+
+## Implementasi CSS terkontrol
+
+Sumber UBold asli tetap dipertahankan. Saat asset disalin ke runtime, `scripts/salin-aset-template.php` mencari rangkaian import `css2*` yang persis cocok dan menggantinya dengan:
+
+```css
+@font-face {
+    font-family: "Nunito";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("../fonts/nunito/Nunito-Variable.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-style: italic;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("../fonts/nunito/Nunito-Italic-Variable.woff2") format("woff2");
+}
+```
+
+Perlindungan implementasi:
+
+- penggantian harus terjadi tepat satu kali;
+- proses gagal jika blok sumber tidak ditemukan atau ditemukan lebih dari sekali;
+- proses gagal jika kedua file WOFF2 tidak tersedia;
+- checksum CSS runtime dihitung ulang setelah penggantian;
+- manifest mencatat perubahan terkontrol tersebut;
+- pengujian byte-level membuktikan CSS runtime hanya berbeda pada blok import `css2*`.
+
+## Hasil Network browser setelah pemasangan
+
+```text
+Request css2* sebelum : 9
+Request css2* sesudah : 0
+Request Nunito lokal  : 2
+Request font eksternal: 0
+```
+
+Browser meminta:
+
+```text
+/assets/admin/fonts/nunito/Nunito-Variable.woff2
+/assets/admin/fonts/nunito/Nunito-Italic-Variable.woff2
+```
+
+Kedua file dapat dilayani oleh Laravel development server dan tidak ada request ke Google Fonts CDN.
+
+## Hasil perbandingan visual
+
+Screenshot before/after dibuat dengan kondisi, URL, viewport, dashboard, dan konfigurasi tema yang sama.
+
+```text
+Ukuran screenshot : 1440 × 1100
+Area perbedaan     : (30, 29, 1384, 1099)
+Pixel berubah      : 98.440 dari 1.584.000
+Persentase berubah : 6,2146%
+```
+
+Perbedaan terlihat pada bentuk, lebar, dan jarak tipografi setelah browser memakai Nunito asli. Struktur dashboard, warna, panel, sidebar, card, tabel, dan pengaturan tema tetap sama.
+
+## Pengujian otomatis
+
+Workflow berikut berhasil:
+
+- `Verifikasi Font Nunito Lokal`;
+- `Verifikasi Visual Font Nunito`;
+- `Fase 1 Smoke Test`;
+- `Investigasi Font UBold`;
+- `Verifikasi Paket Font UBold`.
+
+Cakupan validasi:
+
+- file dan checksum;
+- format WOFF2;
+- variable axis `wght` 300–700;
+- style normal dan italic;
+- lisensi OFL;
+- tidak ada import `css2*` pada CSS runtime;
+- tidak ada request font eksternal;
+- screenshot before/after;
+- unit dan feature test;
+- 70 tabel bisnis dan 3 view tetap sesuai SQL final.
+
+## Batas status fase
+
+Pemasangan font ini menutup temuan asset `css2*`, tetapi tidak mengubah aturan kelulusan fase. Draft PR #2 tidak boleh digabung dan tag `fase-1-selesai` tidak boleh dibuat sebelum checklist manual pemilik selesai dan pemilik menyatakan eksplisit:
+
+```text
+Fase 1 lulus
+```

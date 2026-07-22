@@ -1,0 +1,258 @@
+name: Verifikasi Visual Font Nunito
+
+on:
+  push:
+    branches:
+      - fase-1-fondasi
+    paths:
+      - 'template_admin/assets/fonts/nunito/**'
+      - 'scripts/salin-aset-template.php'
+      - 'resources/views/**'
+      - '.github/workflows/verifikasi-visual-font-nunito.yml'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifikasi-visual:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          python3 -m pip install --disable-pip-version-check --no-cache-dir 'Pillow==11.3.0'
+
+      - name: Prepare application and patched assets
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php scripts/salin-aset-template.php
+          cp public/assets/admin/css/app.min.css /tmp/app-setelah.css
+
+      - name: Prove only the css2 import block changed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('template_admin/assets/css/app.min.css')
+          runtime_path = Path('/tmp/app-setelah.css')
+
+          source = source_path.read_text(encoding='utf-8-sig')
+          runtime = runtime_path.read_text(encoding='utf-8-sig')
+
+          broken = (
+              '@import url(../../../../css2);'
+              '@import url(../../../../css2-1);'
+              '@import url(../../../../css2-2);'
+              '@import url(../../../../css2-3);'
+              '@import url(../../../../css2-4);'
+              '@import url(../../../../css2-5);'
+              '@import url(../../../../css2-6);'
+              '@import url(../../../../css2-7);'
+              '@import url(../../../../css2-6);'
+              '@import url(../../../../css2-8);'
+          )
+          local = (
+              '@font-face{font-family:"Nunito";font-style:normal;font-weight:300 700;'
+              'font-display:swap;src:url("../fonts/nunito/Nunito-Variable.woff2") format("woff2")}'
+              '@font-face{font-family:"Nunito";font-style:italic;font-weight:300 700;'
+              'font-display:swap;src:url("../fonts/nunito/Nunito-Italic-Variable.woff2") format("woff2")}'
+          )
+
+          if source.count(broken) != 1:
+              raise SystemExit('Blok import css2* pada sumber tidak ditemukan tepat satu kali.')
+
+          expected = source.replace(broken, local, 1)
+
+          if runtime != expected:
+              raise SystemExit('CSS runtime berubah di luar blok import css2*.')
+
+          Path('laporan-visual-font.txt').write_text(
+              'VERIFIKASI VISUAL FONT NUNITO\n'
+              '==============================\n\n'
+              '- CSS runtime hanya berbeda pada satu blok import css2*.\n',
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Start Laravel server
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > laravel-server.log 2>&1 &
+          echo $! > laravel-server.pid
+
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/dashboard >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat laravel-server.log
+          exit 1
+
+      - name: Find Chrome or Chromium
+        id: browser
+        run: |
+          for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "command=$candidate" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+
+          echo 'Chrome/Chromium tidak ditemukan.'
+          exit 1
+
+      - name: Capture before screenshot with original broken imports
+        run: |
+          cp template_admin/assets/css/app.min.css public/assets/admin/css/app.min.css
+
+          "${{ steps.browser.outputs.command }}" \
+            --headless \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --disable-gpu \
+            --window-size=1440,1100 \
+            --virtual-time-budget=7000 \
+            --run-all-compositor-stages-before-draw \
+            --log-net-log=network-sebelum.json \
+            --net-log-capture-mode=Everything \
+            --screenshot=screenshot-sebelum-fallback.png \
+            http://127.0.0.1:8000/dashboard \
+            > browser-sebelum.log 2>&1
+
+      - name: Capture after screenshot with local Nunito
+        run: |
+          cp /tmp/app-setelah.css public/assets/admin/css/app.min.css
+
+          "${{ steps.browser.outputs.command }}" \
+            --headless \
+            --no-sandbox \
+            --disable-dev-shm-usage \
+            --disable-gpu \
+            --window-size=1440,1100 \
+            --virtual-time-budget=7000 \
+            --run-all-compositor-stages-before-draw \
+            --log-net-log=network-setelah.json \
+            --net-log-capture-mode=Everything \
+            --screenshot=screenshot-setelah-nunito.png \
+            http://127.0.0.1:8000/dashboard \
+            > browser-setelah.log 2>&1
+
+      - name: Analyse Network and visual difference
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          from PIL import Image, ImageChops, ImageDraw
+
+          def request_urls(path: str) -> set[str]:
+              data = json.loads(Path(path).read_text(encoding='utf-8', errors='replace'))
+              urls: set[str] = set()
+
+              def walk(value):
+                  if isinstance(value, dict):
+                      for key, child in value.items():
+                          if key == 'url' and isinstance(child, str) and child.startswith(('http://', 'https://')):
+                              urls.add(child)
+                          walk(child)
+                  elif isinstance(value, list):
+                      for child in value:
+                          walk(child)
+
+              walk(data)
+              return urls
+
+          before_urls = request_urls('network-sebelum.json')
+          after_urls = request_urls('network-setelah.json')
+
+          before_css2 = sorted(url for url in before_urls if '/css2' in url)
+          after_css2 = sorted(url for url in after_urls if '/css2' in url)
+          after_nunito = sorted(url for url in after_urls if '/fonts/nunito/' in url)
+          external_font = sorted(
+              url for url in after_urls
+              if 'fonts.googleapis.com' in url or 'fonts.gstatic.com' in url
+          )
+
+          if not before_css2:
+              raise SystemExit('Browser sebelum perubahan tidak mencatat request css2*.')
+          if after_css2:
+              raise SystemExit(f'Request css2* masih ada setelah perubahan: {after_css2}')
+          if not any(url.endswith('Nunito-Variable.woff2') for url in after_nunito):
+              raise SystemExit('Browser tidak meminta Nunito-Variable.woff2 lokal.')
+          if external_font:
+              raise SystemExit(f'Request font eksternal ditemukan: {external_font}')
+
+          before = Image.open('screenshot-sebelum-fallback.png').convert('RGB')
+          after = Image.open('screenshot-setelah-nunito.png').convert('RGB')
+
+          if before.size != after.size:
+              raise SystemExit(f'Ukuran screenshot berbeda: {before.size} vs {after.size}')
+
+          difference = ImageChops.difference(before, after)
+          bbox = difference.getbbox()
+          changed_pixels = sum(1 for pixel in difference.getdata() if pixel != (0, 0, 0))
+          total_pixels = before.width * before.height
+          percentage = changed_pixels / total_pixels * 100
+
+          canvas = Image.new('RGB', (before.width * 2, before.height + 42), 'white')
+          canvas.paste(before, (0, 42))
+          canvas.paste(after, (before.width, 42))
+          draw = ImageDraw.Draw(canvas)
+          draw.text((20, 14), 'SEBELUM: fallback sans-serif', fill='black')
+          draw.text((before.width + 20, 14), 'SESUDAH: Nunito lokal', fill='black')
+          canvas.save('perbandingan-sebelum-setelah.png')
+          difference.save('selisih-pixel.png')
+
+          with Path('laporan-visual-font.txt').open('a', encoding='utf-8') as report:
+              report.write(f'- Ukuran screenshot: {before.width}x{before.height}.\n')
+              report.write(f'- Area perbedaan: {bbox}.\n')
+              report.write(f'- Pixel berubah: {changed_pixels}/{total_pixels} ({percentage:.4f}%).\n')
+              report.write(f'- Request css2* sebelum: {len(before_css2)}.\n')
+              report.write(f'- Request css2* sesudah: {len(after_css2)}.\n')
+              report.write(f'- Request font Nunito lokal sesudah: {len(after_nunito)}.\n')
+              report.write(f'- Request font eksternal sesudah: {len(external_font)}.\n')
+              report.write('\nURL Nunito lokal yang diminta browser:\n')
+              for url in after_nunito:
+                  report.write(f'- {url}\n')
+
+          print(Path('laporan-visual-font.txt').read_text(encoding='utf-8'))
+          PY
+
+          curl -fsS http://127.0.0.1:8000/assets/admin/fonts/nunito/Nunito-Variable.woff2 >/dev/null
+          curl -fsS http://127.0.0.1:8000/assets/admin/fonts/nunito/Nunito-Italic-Variable.woff2 >/dev/null
+          kill "$(cat laravel-server.pid)" || true
+
+      - name: Upload visual comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perbandingan-visual-font-nunito
+          path: |
+            screenshot-sebelum-fallback.png
+            screenshot-setelah-nunito.png
+            perbandingan-sebelum-setelah.png
+            selisih-pixel.png
+            laporan-visual-font.txt
+            network-sebelum.json
+            network-setelah.json
+            browser-sebelum.log
+            browser-setelah.log
+            laravel-server.log
+          retention-days: 7
+          if-no-files-found: warn
