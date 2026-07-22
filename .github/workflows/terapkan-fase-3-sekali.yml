@@ -6,6 +6,11 @@ on:
       - fase-3-master-data
     paths:
       - '.github/workflows/terapkan-fase-3-sekali.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/terapkan-fase-3-sekali.yml'
   workflow_dispatch:
 
 permissions:
@@ -13,6 +18,7 @@ permissions:
 
 jobs:
   terapkan:
+    if: github.event_name != 'pull_request' || github.head_ref == 'fase-3-master-data'
     runs-on: ubuntu-latest
 
     steps:
