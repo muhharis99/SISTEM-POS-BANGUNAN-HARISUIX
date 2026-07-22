@@ -55,10 +55,33 @@ jobs:
           sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
           sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
 
-      - name: Check syntax and formatting
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        id: pint
+        continue-on-error: true
         run: |
-          find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
-          vendor/bin/pint --test
+          set -o pipefail
+          vendor/bin/pint --test --format=json 2>&1 | tee laporan-pint-fase-3.json
+
+      - name: Generate exact Pint patch on CI checkout
+        if: steps.pint.outcome == 'failure'
+        run: |
+          vendor/bin/pint app bootstrap config database routes scripts tests
+          git diff -- app bootstrap config database routes scripts tests > laporan-pint-fase-3.patch
+          cat laporan-pint-fase-3.patch
+
+      - name: Upload Pint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-pint-fase-3
+          path: |
+            laporan-pint-fase-3.json
+            laporan-pint-fase-3.patch
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Backup empty development database before migration
         run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-3.sql
@@ -124,3 +147,7 @@ jobs:
 
       - name: Run complete regression suite
         run: php artisan test
+
+      - name: Fail when original Pint check failed
+        if: steps.pint.outcome == 'failure'
+        run: exit 1
