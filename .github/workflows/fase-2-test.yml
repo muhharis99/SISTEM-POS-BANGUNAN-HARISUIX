@@ -55,10 +55,28 @@ jobs:
           sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
           sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
 
-      - name: Check syntax and formatting
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        id: pint
+        continue-on-error: true
         run: |
-          find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
-          vendor/bin/pint --test
+          set -o pipefail
+          vendor/bin/pint --test --format=json 2>&1 | tee laporan-pint-fase-2.json
+
+      - name: Upload Pint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laporan-pint-fase-2
+          path: laporan-pint-fase-2.json
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Stop when Pint failed
+        if: steps.pint.outcome == 'failure'
+        run: exit 1
 
       - name: Run patent schema migration
         id: migration
