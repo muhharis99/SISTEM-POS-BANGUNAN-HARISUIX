@@ -26,7 +26,9 @@ class Cabang extends Model
 
     public function scopeAktif(Builder $query): Builder
     {
-        return $query->where('status_aktif', 1)->whereNull('deleted_at');
+        return $query
+            ->where('cabang.status_aktif', 1)
+            ->whereNull('cabang.deleted_at');
     }
 
     public function penugasanPeran(): HasMany
