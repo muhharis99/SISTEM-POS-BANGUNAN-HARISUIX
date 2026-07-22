@@ -31,7 +31,6 @@ class LoginController extends Controller
         $data = $request->validate([
             'nama_pengguna' => ['required', 'string', 'max:100'],
             'kata_sandi' => ['required', 'string'],
-            'ingat_saya' => ['nullable', 'boolean'],
         ], [], [
             'nama_pengguna' => 'nama pengguna',
             'kata_sandi' => 'kata sandi',
@@ -50,6 +49,8 @@ class LoginController extends Controller
         }
 
         if ($pengguna->dikunci_sampai?->isFuture()) {
+            $audit->catat($request, 'AUTENTIKASI', 'MASUK', 'pengguna', $pengguna->id_pengguna, 'Login ditolak karena akun masih dikunci.');
+
             return back()->withInput($request->only('nama_pengguna'))->withErrors([
                 'nama_pengguna' => 'Akun dikunci sementara sampai '.$pengguna->dikunci_sampai->format('d-m-Y H:i').'.',
             ]);
@@ -74,7 +75,7 @@ class LoginController extends Controller
             ]);
         }
 
-        Auth::login($pengguna, (bool) ($data['ingat_saya'] ?? false));
+        Auth::login($pengguna, false);
         $request->session()->regenerate();
 
         $pengguna->forceFill([
