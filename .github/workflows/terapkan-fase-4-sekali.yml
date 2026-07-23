@@ -1,4 +1,4 @@
-name: Terapkan Fase 4 Sekali
+name: Terapkan Kode Fase 4 Sekali
 
 on:
   push:
@@ -6,24 +6,16 @@ on:
       - fase-4-persediaan
     paths:
       - '.github/workflows/terapkan-fase-4-sekali.yml'
-      - '.fase4-paket/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/terapkan-fase-4-sekali.yml'
-      - '.fase4-paket/**'
 
 permissions:
   contents: write
 
 concurrency:
-  group: terapkan-fase-4-sekali
-  cancel-in-progress: true
+  group: terapkan-kode-fase-4-sekali
+  cancel-in-progress: false
 
 jobs:
   terapkan:
-    if: github.event_name == 'pull_request' && github.head_ref == 'fase-4-persediaan'
     runs-on: ubuntu-latest
 
     steps:
@@ -40,20 +32,12 @@ jobs:
           extensions: mbstring
           coverage: none
 
-      - name: Decode paket Base64
+      - name: Decode dan audit paket
         run: |
           set -euo pipefail
           cat .fase4-paket/part-* | base64 --decode > /tmp/fase4-package.tar.gz
           test -s /tmp/fase4-package.tar.gz
-          wc -c /tmp/fase4-package.tar.gz
-          sha256sum /tmp/fase4-package.tar.gz
-
-      - name: Uji integritas Gzip
-        run: gzip -t /tmp/fase4-package.tar.gz
-
-      - name: Audit daftar berkas paket
-        run: |
-          set -euo pipefail
+          gzip -t /tmp/fase4-package.tar.gz
           tar -tzf /tmp/fase4-package.tar.gz > /tmp/fase4-package-files.txt
           cat /tmp/fase4-package-files.txt
 
@@ -67,30 +51,29 @@ jobs:
             exit 1
           fi
 
-      - name: Ekstrak paket ke branch Fase 4
-        run: tar -xzf /tmp/fase4-package.tar.gz -C .
+      - name: Ekstrak kode aplikasi tanpa file workflow
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/fase4-extracted
+          mkdir -p /tmp/fase4-extracted
+          tar -xzf /tmp/fase4-package.tar.gz -C /tmp/fase4-extracted
+          rm -f /tmp/fase4-extracted/.github/workflows/fase-4-test.yml
+          rsync -a /tmp/fase4-extracted/ ./
 
       - name: Periksa sintaks PHP
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Siapkan perubahan Git
+      - name: Commit kode aplikasi dan hapus paket sementara
         run: |
           set -euo pipefail
           rm -rf .fase4-paket
-          rm .github/workflows/terapkan-fase-4-sekali.yml
-          rm .github/workflows/ekstrak-paket-fase-4.yml
-          git checkout origin/main -- .github/workflows/fase-3-test.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A -- ':!.github/workflows/**'
           git status --short
           if git diff --cached --quiet; then
-            echo 'Tidak ada perubahan hasil ekstraksi.' >&2
+            echo 'Tidak ada perubahan kode aplikasi hasil ekstraksi.' >&2
             exit 1
           fi
-
-      - name: Buat commit implementasi Fase 4
-        run: git commit -m "feat(fase4): implementasi persediaan dan mutasi stok"
-
-      - name: Kirim commit ke branch Fase 4
-        run: git push origin HEAD:fase-4-persediaan
+          git commit -m "feat(fase4): terapkan persediaan dan mutasi stok"
+          git push origin HEAD:fase-4-persediaan
