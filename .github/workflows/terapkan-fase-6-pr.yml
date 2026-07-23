@@ -19,7 +19,17 @@ jobs:
           ref: fase-6-implementasi-penjualan-piutang
           fetch-depth: 0
 
+      - name: Periksa apakah overlay sudah diterapkan
+        id: periksa
+        run: |
+          if [ -f app/Services/LayananPenjualan.php ]; then
+            echo "sudah=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sudah=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verifikasi dan ekstrak overlay
+        if: steps.periksa.outputs.sudah == 'false'
         run: |
           cat .fase6-paket/chunk-* > /tmp/paket-fase6.tar.gz.b64
           test "$(sha256sum /tmp/paket-fase6.tar.gz.b64 | awk '{print $1}')" = "49d3847da658347fad04eef080171720a437c7e9f0768a434fd1b5535cbce905"
@@ -33,11 +43,10 @@ jobs:
           fi
           cp -a /tmp/fase6-overlay/. .
 
-      - name: Bersihkan alat sementara dan commit overlay
+      - name: Commit overlay
+        if: steps.periksa.outputs.sudah == 'false'
         run: |
           git rm -rf .fase6-paket
-          git rm -f .github/workflows/terapkan-fase-6-sekali.yml
-          git rm -f .github/workflows/terapkan-fase-6-pr.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
