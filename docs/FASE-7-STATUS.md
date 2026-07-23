@@ -3,9 +3,10 @@
 ## Checkpoint
 
 - Fase 1 sampai Fase 6: lulus dan sudah digabung ke `main`.
-- Fase 7: **implementasi teknis selesai dan seluruh CI otomatis hijau; belum lulus menurut keputusan pemilik**.
+- Fase 7: **LULUS berdasarkan keputusan eksplisit pemilik pada 23 Juli 2026**.
 - Branch: `fase-7-kas-bank-akuntansi`.
-- Pull request: Draft PR #10.
+- Pull request: PR #10.
+- Checklist manual: diterima pemilik.
 - Auto-merge: dilarang dan tidak digunakan.
 - Fase 8 belum dimulai.
 
@@ -50,12 +51,21 @@ Tidak ada tabel, kolom, index, foreign key, migration bisnis, maupun view yang d
 - Full regression suite berhasil.
 - UBold/Nunito lokal dan visual test berhasil.
 - Audit larangan auto-merge berhasil.
-- Seluruh 12 workflow hijau pada commit teknis `7738b6d541951e5f04c365d746eb00483b0a77a8`.
+- Seluruh 12 workflow hijau pada commit checkpoint `c315299a2b55542702ffeda4c9182012e7f6b399` sebelum keputusan kelulusan pemilik.
 
-## Gate
+## Keputusan kelulusan
 
-- Draft PR #10 tetap draft dan belum di-merge.
-- Checklist manual belum dinyatakan diterima oleh pemilik.
-- Fase 7 hanya boleh dinyatakan lulus setelah pemilik menyatakan eksplisit `Fase 7 lulus`.
-- Auto-merge dilarang dan tidak digunakan.
-- Fase 8 tidak boleh dimulai tanpa instruksi terpisah.
+Pemilik proyek menyatakan secara eksplisit:
+
+```text
+Fase 7 lulus
+```
+
+Dengan keputusan tersebut:
+
+- checklist manual dinyatakan diterima pemilik;
+- Fase 7 dinyatakan lulus;
+- PR #10 boleh diubah menjadi ready-for-review;
+- PR #10 hanya boleh di-merge setelah CI pada commit checkpoint terbaru tetap hijau dan head SHA dikunci;
+- auto-merge tetap dilarang dan tidak digunakan;
+- Fase 8 tidak dimulai tanpa instruksi terpisah.
