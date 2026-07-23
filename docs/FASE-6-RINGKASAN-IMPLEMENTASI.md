@@ -1,11 +1,11 @@
-# Fase 6 — Ringkasan Implementasi Penjualan, Piutang, dan Pengiriman
+# Fase 6 — Ringkasan Implementasi Penjualan, Piutang, Pengiriman, dan Retur
 
 ## Status
 
-**IMPLEMENTASI BERJALAN — BELUM LULUS.**
+**IMPLEMENTASI TEKNIS DITERAPKAN — SEDANG DIUJI, BELUM LULUS.**
 
-- Branch: `fase-6-penjualan-piutang`
-- Pull request: Draft PR #7
+- Branch: `fase-6-implementasi-penjualan-piutang`
+- Pull request: Draft PR #8
 - Target: `main`
 - Auto-merge: dilarang
 - Fase 7: belum dimulai
@@ -13,27 +13,29 @@
 ## Alur dokumen
 
 1. Pengguna membuat penawaran untuk pelanggan atau pelanggan umum.
-2. Penawaran dapat dikirim, diterima pelanggan, ditolak, kedaluwarsa, atau diubah menjadi pesanan.
-3. Pesanan penjualan menyimpan sumber pesanan, daftar harga, alamat, cara pembayaran, dan rencana pengiriman.
-4. Persetujuan pesanan memvalidasi batas kredit pelanggan dan ketersediaan stok.
-5. Penjualan tunai langsung mencatat pembayaran, sedangkan penjualan tempo membentuk `piutang_pelanggan`.
-6. Persetujuan penjualan mengurangi stok melalui mutasi `PENJUALAN` pada layanan persediaan Fase 4.
-7. Pembayaran piutang dapat dialokasikan ke beberapa transaksi pelanggan yang sama.
-8. Pengiriman dapat dilakukan sebagian atau penuh dan memperbarui status pesanan/penjualan.
-9. Retur penjualan menambah stok melalui mutasi `RETUR_PENJUALAN`; barang rusak dipisahkan dari stok tersedia.
-10. Retur dengan opsi `POTONG_PIUTANG` memperbarui saldo piutang secara atomik.
+2. Penawaran dapat dikirim, diterima pelanggan, ditolak, ditandai kedaluwarsa, dibatalkan, atau dikonversi satu kali menjadi pesanan.
+3. Pesanan menyimpan sumber pesanan, daftar harga, alamat, cara pembayaran, dan rencana pengiriman.
+4. Persetujuan pesanan tempo memvalidasi pelanggan dan batas kredit.
+5. Penjualan dapat dibuat langsung atau mengacu pada pesanan.
+6. Persetujuan penjualan mengurangi stok melalui mutasi `PENJUALAN` dan menyimpan harga pokok serta laba kotor.
+7. Penjualan tempo membentuk satu `piutang_pelanggan`; penjualan tunai menyimpan nilai pembayaran dan uang kembali.
+8. Pembayaran piutang dapat dialokasikan ke beberapa piutang milik pelanggan yang sama secara atomik.
+9. Pengiriman mendukung alur draf, dijadwalkan, dalam perjalanan, diterima, gagal, dan dibatalkan.
+10. Retur penjualan mengembalikan stok melalui mutasi `RETUR_PENJUALAN`; barang tidak layak jual dialihkan ke gudang RUSAK.
+11. Retur dengan cara `POTONG_PIUTANG` mengurangi saldo piutang dan memperbarui status penjualan.
 
 ## Pengaman
 
-- Semua transaksi dibatasi oleh cabang aktif.
-- Status dokumen dan saldo stok/piutang dikunci dengan `lockForUpdate()`.
+- Seluruh transaksi dibatasi cabang aktif.
+- Dokumen, saldo stok, dan saldo piutang dikunci dengan `lockForUpdate()`.
 - Kuantitas mengikuti `satuan.jumlah_desimal` dan `barang_satuan.nilai_konversi`.
 - Penjualan tidak boleh mengurangi stok melebihi stok tersedia.
-- Pengiriman dan retur tidak boleh melebihi jumlah transaksi sumber.
-- Alokasi pembayaran tidak boleh melebihi sisa piutang.
-- Seluruh tindakan penting dicatat ke audit aktivitas.
+- Pengiriman tidak boleh melampaui jumlah penjualan atau pesanan sumber.
+- Retur tidak boleh melampaui jumlah barang yang dijual.
+- Alokasi pembayaran dan potongan tidak boleh melampaui sisa piutang.
+- Seluruh tindakan penting dicatat pada audit aktivitas.
 - Tidak ada perubahan skema paten.
 
 ## Permission Fase 6
 
-Permission akan dipisahkan untuk penawaran, pesanan, penjualan, piutang, pembayaran, pengiriman, retur, dan laporan agar setiap endpoint tetap terlindungi di sisi server.
+Fase 6 menambahkan 18 permission. Total target setelah Fase 2–Fase 6 adalah 75 permission aktif.

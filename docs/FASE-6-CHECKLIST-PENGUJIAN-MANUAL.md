@@ -7,7 +7,7 @@ Status: **belum diterima pemilik**.
 - [ ] Jalankan migration SQL paten pada database kosong.
 - [ ] Jalankan setup administrator Fase 2 serta setup Fase 3 sampai Fase 6.
 - [ ] Pastikan tetap 71 base table dan 3 view.
-- [ ] Pastikan permission Fase 1 sampai Fase 6 aktif tanpa duplikasi.
+- [ ] Pastikan 75 permission aktif dan 18 permission Fase 6 tanpa duplikasi.
 
 ## Penawaran dan pesanan
 
@@ -48,7 +48,7 @@ Status: **belum diterima pemilik**.
 - [ ] Buat retur dari detail penjualan.
 - [ ] Uji alur draf, disetujui, diterima, selesai, dan dibatalkan.
 - [ ] Pastikan barang layak jual kembali menambah stok tersedia.
-- [ ] Pastikan barang rusak/cacat menambah stok rusak.
+- [ ] Pastikan barang rusak/cacat masuk ke gudang RUSAK.
 - [ ] Pastikan mutasi `RETUR_PENJUALAN` terbentuk.
 - [ ] Pastikan opsi potong piutang memperbarui piutang dan penjualan.
 - [ ] Pastikan retur melebihi jumlah penjualan ditolak atomik.
