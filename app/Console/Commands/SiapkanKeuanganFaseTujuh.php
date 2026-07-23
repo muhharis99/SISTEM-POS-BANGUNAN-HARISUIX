@@ -115,8 +115,10 @@ class SiapkanKeuanganFaseTujuh extends Command
 
             $simpanAkun('100000', 'Aset', 'ASET', 'DEBET', false);
             $simpanAkun('110000', 'Aset Lancar', 'ASET', 'DEBET', false, '100000');
-            $simpanAkun('110100', 'Kas', 'ASET', 'DEBET', true, '110000');
-            $simpanAkun('110200', 'Bank', 'ASET', 'DEBET', true, '110000');
+            $simpanAkun('110100', 'Kas', 'ASET', 'DEBET', false, '110000');
+            $simpanAkun('110101', 'Kas Belum Dipetakan', 'ASET', 'DEBET', true, '110100');
+            $simpanAkun('110200', 'Bank', 'ASET', 'DEBET', false, '110000');
+            $simpanAkun('110201', 'Bank Belum Dipetakan', 'ASET', 'DEBET', true, '110200');
             $simpanAkun('110300', 'Piutang Usaha', 'ASET', 'DEBET', true, '110000');
             $simpanAkun('110400', 'Persediaan Barang', 'ASET', 'DEBET', true, '110000');
             $simpanAkun('110500', 'Pajak Masukan', 'ASET', 'DEBET', true, '110000');
@@ -142,8 +144,8 @@ class SiapkanKeuanganFaseTujuh extends Command
             $simpanAkun('610300', 'Beban Administrasi Bank', 'BEBAN', 'DEBET', true, '600000');
 
             $pemetaan = [
-                'KAS' => '110100',
-                'BANK' => '110200',
+                'KAS' => '110101',
+                'BANK' => '110201',
                 'PIUTANG_USAHA' => '110300',
                 'PERSEDIAAN' => '110400',
                 'PAJAK_MASUKAN' => '110500',
@@ -175,15 +177,26 @@ class SiapkanKeuanganFaseTujuh extends Command
                 ->whereNull('deleted_at')
                 ->orderBy('id_kas_bank')
                 ->get()
-                ->each(function (object $kasBank) use ($akun): void {
-                    $kodeAkun = $kasBank->jenis_kas_bank === 'BANK' ? '110200' : '110100';
+                ->each(function (object $kasBank) use (&$akun, $simpanAkun): void {
+                    $kodeInduk = $kasBank->jenis_kas_bank === 'BANK' ? '110200' : '110100';
+                    $awalan = $kasBank->jenis_kas_bank === 'BANK' ? '1102' : '1101';
+                    $kodeAkun = $awalan.str_pad((string) $kasBank->id_kas_bank, 4, '0', STR_PAD_LEFT);
+                    $idAkun = $simpanAkun(
+                        $kodeAkun,
+                        $kasBank->nama_kas_bank,
+                        'ASET',
+                        'DEBET',
+                        true,
+                        $kodeInduk
+                    );
+
                     DB::table('pemetaan_akun')->updateOrInsert(
                         [
                             'id_cabang' => $kasBank->id_cabang,
                             'kunci_pemetaan' => 'KAS_BANK_'.$kasBank->id_kas_bank,
                         ],
                         [
-                            'id_akun_keuangan' => $akun[$kodeAkun],
+                            'id_akun_keuangan' => $idAkun,
                             'keterangan' => 'Pemetaan otomatis '.$kasBank->nama_kas_bank,
                             'updated_at' => now(),
                             'updated_by' => null,
