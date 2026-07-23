@@ -43,10 +43,11 @@ jobs:
           fi
           cp -a /tmp/fase6-overlay/. .
 
-      - name: Commit overlay
+      - name: Commit overlay tanpa file workflow baru
         if: steps.periksa.outputs.sudah == 'false'
         run: |
           git rm -rf .fase6-paket
+          rm -f .github/workflows/fase-6-test.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
