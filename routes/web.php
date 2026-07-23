@@ -8,6 +8,7 @@ use App\Http\Controllers\DaftarHargaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GudangController;
 use App\Http\Controllers\HutangPemasokController;
+use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\PembelianController;
@@ -206,6 +207,19 @@ Route::middleware(['auth', 'cabang.aktif'])->group(function (): void {
         Route::post('/', [PiutangPelangganController::class, 'simpan'])->middleware('hak.akses:PEMBAYARAN_PIUTANG_KELOLA')->name('simpan');
         Route::patch('/{id}/setujui', [PiutangPelangganController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:PEMBAYARAN_PIUTANG_SETUJUI')->name('setujui');
         Route::patch('/{id}/batalkan', [PiutangPelangganController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:PEMBAYARAN_PIUTANG_KELOLA')->name('batalkan');
+    });
+
+    Route::prefix('keuangan')->name('keuangan.')->group(function (): void {
+        Route::get('/', [KeuanganController::class, 'index'])->middleware('hak.akses:KEUANGAN_LIHAT')->name('index');
+        Route::post('/akun', [KeuanganController::class, 'simpanAkun'])->middleware('hak.akses:AKUN_KEUANGAN_KELOLA')->name('akun.simpan');
+        Route::put('/akun/{id}', [KeuanganController::class, 'ubahAkun'])->whereNumber('id')->middleware('hak.akses:AKUN_KEUANGAN_KELOLA')->name('akun.ubah');
+        Route::post('/pemetaan', [KeuanganController::class, 'simpanPemetaan'])->middleware('hak.akses:PEMETAAN_AKUN_KELOLA')->name('pemetaan.simpan');
+        Route::post('/transaksi-kas', [KeuanganController::class, 'simpanTransaksiKas'])->middleware('hak.akses:TRANSAKSI_KAS_KELOLA')->name('transaksi-kas.simpan');
+        Route::patch('/transaksi-kas/{id}/setujui', [KeuanganController::class, 'setujuiTransaksiKas'])->whereNumber('id')->middleware('hak.akses:TRANSAKSI_KAS_SETUJUI')->name('transaksi-kas.setujui');
+        Route::patch('/transaksi-kas/{id}/batalkan', [KeuanganController::class, 'batalkanTransaksiKas'])->whereNumber('id')->middleware('hak.akses:TRANSAKSI_KAS_KELOLA')->name('transaksi-kas.batalkan');
+        Route::post('/jurnal', [KeuanganController::class, 'simpanJurnal'])->middleware('hak.akses:JURNAL_UMUM_KELOLA')->name('jurnal.simpan');
+        Route::patch('/jurnal/{id}/posting', [KeuanganController::class, 'postingJurnal'])->whereNumber('id')->middleware('hak.akses:JURNAL_UMUM_POSTING')->name('jurnal.posting');
+        Route::patch('/jurnal/{id}/batalkan', [KeuanganController::class, 'batalkanJurnal'])->whereNumber('id')->middleware('hak.akses:JURNAL_UMUM_KELOLA')->name('jurnal.batalkan');
     });
 
     Route::get('/audit', [AuditController::class, 'index'])->middleware('hak.akses:AUDIT_LIHAT')->name('audit.index');
