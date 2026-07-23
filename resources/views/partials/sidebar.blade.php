@@ -49,6 +49,10 @@
             ['izin' => 'PIUTANG_PELANGGAN_LIHAT', 'ikon' => 'wallet-cards', 'nama' => 'Piutang Pelanggan', 'route' => route('piutang-pelanggan.index'), 'aktif' => request()->routeIs('piutang-pelanggan.*')],
         ];
         $adaPenjualan = collect($menuPenjualan)->contains(fn (array $item): bool => $punya($item['izin']));
+        $menuKeuangan = [
+            ['izin' => 'KEUANGAN_LIHAT', 'ikon' => 'chart-no-axes-combined', 'nama' => 'Kas & Akuntansi', 'route' => route('keuangan.index'), 'aktif' => request()->routeIs('keuangan.*')],
+        ];
+        $adaKeuangan = collect($menuKeuangan)->contains(fn (array $item): bool => $punya($item['izin']));
     @endphp
 
     <div data-simplebar>
@@ -77,10 +81,16 @@
                 @endforeach
             @endif
 
-
             @if ($adaPenjualan)
                 <li class="side-nav-title">Penjualan</li>
                 @foreach ($menuPenjualan as $item)
+                    @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
+                @endforeach
+            @endif
+
+            @if ($adaKeuangan)
+                <li class="side-nav-title">Keuangan</li>
+                @foreach ($menuKeuangan as $item)
                     @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
                 @endforeach
             @endif
@@ -90,11 +100,6 @@
                 @if ($bolehPengguna)<li class="side-nav-item"><a href="{{ route('pengguna.index') }}" class="side-nav-link {{ request()->routeIs('pengguna.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="users"></i></span><span class="menu-text">Pengguna</span></a></li>@endif
                 @if ($bolehPeran)<li class="side-nav-item"><a href="{{ route('peran.index') }}" class="side-nav-link {{ request()->routeIs('peran.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="shield-check"></i></span><span class="menu-text">Peran & Hak Akses</span></a></li>@endif
             @endif
-
-            <li class="side-nav-title">Operasional berikutnya</li>
-            @foreach ([['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])
-                <li class="side-nav-item"><span class="side-nav-link text-muted"><span class="menu-icon"><i data-lucide="{{ $ikon }}"></i></span><span class="menu-text">{{ $nama }}</span></span></li>
-            @endforeach
 
             <li class="side-nav-title">Sistem</li>
             @if ($bolehAudit)<li class="side-nav-item"><a href="{{ route('audit.index') }}" class="side-nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="history"></i></span><span class="menu-text">Audit Aktivitas</span></a></li>@endif
