@@ -2,15 +2,15 @@
 
 ## Status
 
-**IMPLEMENTASI BERJALAN — BELUM LULUS.**
+**FASE 4 LULUS — implementasi, CI otomatis, dan checklist manual telah diterima pemilik.**
 
 - Branch: `fase-4-persediaan`
-- Pull request: Draft PR #5
+- Pull request: PR #5
 - Target: `main`
 - Auto-merge: dilarang
 - Fase 5: belum dimulai
 
-Fase 4 hanya boleh dinyatakan lulus setelah pengujian otomatis dan checklist manual selesai, kemudian pemilik menyatakan eksplisit `Fase 4 lulus`.
+Pemilik telah menyatakan Fase 4 lulus. PR #5 boleh diubah menjadi siap ditinjau dan digabung ke `main` setelah seluruh CI pada commit checkpoint terakhir tetap hijau. Auto-merge tetap tidak digunakan.
 
 ## Integritas skema paten
 
