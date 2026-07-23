@@ -44,6 +44,11 @@
             ['izin' => 'HUTANG_PEMASOK_LIHAT', 'ikon' => 'hand-coins', 'nama' => 'Hutang Pemasok', 'route' => route('hutang-pemasok.index'), 'aktif' => request()->routeIs('hutang-pemasok.*')],
         ];
         $adaPembelian = collect($menuPembelian)->contains(fn (array $item): bool => $punya($item['izin']));
+        $menuPenjualan = [
+            ['izin' => 'PENJUALAN_LIHAT', 'ikon' => 'shopping-cart', 'nama' => 'Penjualan', 'route' => route('penjualan.index'), 'aktif' => request()->routeIs('penjualan.*')],
+            ['izin' => 'PIUTANG_PELANGGAN_LIHAT', 'ikon' => 'wallet-cards', 'nama' => 'Piutang Pelanggan', 'route' => route('piutang-pelanggan.index'), 'aktif' => request()->routeIs('piutang-pelanggan.*')],
+        ];
+        $adaPenjualan = collect($menuPenjualan)->contains(fn (array $item): bool => $punya($item['izin']));
     @endphp
 
     <div data-simplebar>
@@ -72,6 +77,14 @@
                 @endforeach
             @endif
 
+
+            @if ($adaPenjualan)
+                <li class="side-nav-title">Penjualan</li>
+                @foreach ($menuPenjualan as $item)
+                    @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
+                @endforeach
+            @endif
+
             @if ($bolehPengguna || $bolehPeran)
                 <li class="side-nav-title">Organisasi & akses</li>
                 @if ($bolehPengguna)<li class="side-nav-item"><a href="{{ route('pengguna.index') }}" class="side-nav-link {{ request()->routeIs('pengguna.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="users"></i></span><span class="menu-text">Pengguna</span></a></li>@endif
@@ -79,7 +92,7 @@
             @endif
 
             <li class="side-nav-title">Operasional berikutnya</li>
-            @foreach ([['shopping-cart', 'Penjualan & POS'], ['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])
+            @foreach ([['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])
                 <li class="side-nav-item"><span class="side-nav-link text-muted"><span class="menu-icon"><i data-lucide="{{ $ikon }}"></i></span><span class="menu-text">{{ $nama }}</span></span></li>
             @endforeach
 
