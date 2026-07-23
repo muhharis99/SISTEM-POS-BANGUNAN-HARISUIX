@@ -13,6 +13,7 @@
         $punya = fn (string $izin): bool => (bool) $penggunaAktif?->memilikiHakAkses($izin, $idCabangAktif);
         $bolehPengguna = $punya('PENGGUNA_LIHAT');
         $bolehPeran = $punya('PERAN_LIHAT');
+        $bolehLampiran = $punya('LAMPIRAN_LIHAT');
         $bolehAudit = $punya('AUDIT_LIHAT');
         $menuMaster = [
             ['izin' => 'MASTER_BARANG_LIHAT', 'ikon' => 'package-search', 'nama' => 'Barang', 'route' => route('barang.index'), 'aktif' => request()->routeIs('barang.*')],
@@ -102,6 +103,7 @@
             @endif
 
             <li class="side-nav-title">Sistem</li>
+            @if ($bolehLampiran)<li class="side-nav-item"><a href="{{ route('lampiran.index') }}" class="side-nav-link {{ request()->routeIs('lampiran.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="paperclip"></i></span><span class="menu-text">Lampiran Dokumen</span></a></li>@endif
             @if ($bolehAudit)<li class="side-nav-item"><a href="{{ route('audit.index') }}" class="side-nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="history"></i></span><span class="menu-text">Audit Aktivitas</span></a></li>@endif
             <li class="side-nav-item"><a href="{{ route('profil') }}" class="side-nav-link {{ request()->routeIs('profil*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="user-cog"></i></span><span class="menu-text">Profil Saya</span></a></li>
         </ul>
