@@ -70,6 +70,7 @@ class AuditAktivitas
             foreach ($nilai as $kunci => $isi) {
                 if (is_string($kunci) && $this->kunciSensitif($kunci)) {
                     $hasil[$kunci] = '[DISEMBUNYIKAN]';
+
                     continue;
                 }
 
