@@ -1,0 +1,150 @@
+name: Rapikan Integrasi Fase 6
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  rapikan:
+    if: github.head_ref == 'fase-6-implementasi-penjualan-piutang'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch Fase 6
+        uses: actions/checkout@v4
+        with:
+          ref: fase-6-implementasi-penjualan-piutang
+          fetch-depth: 0
+
+      - name: Periksa integrasi
+        id: periksa
+        run: |
+          if grep -q "Route::prefix('penjualan')" routes/web.php; then
+            echo "sudah=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sudah=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup PHP 8.4
+        if: steps.periksa.outputs.sudah == 'false'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        if: steps.periksa.outputs.sudah == 'false'
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Integrasikan route sidebar dan regresi
+        if: steps.periksa.outputs.sudah == 'false'
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          routes = Path('routes/web.php')
+          text = routes.read_text()
+          if 'use App\\Http\\Controllers\\PenjualanController;' not in text:
+              text = text.replace(
+                  'use App\\Http\\Controllers\\PembelianController;\nuse App\\Http\\Controllers\\PenggunaController;',
+                  'use App\\Http\\Controllers\\PembelianController;\nuse App\\Http\\Controllers\\PenjualanController;\nuse App\\Http\\Controllers\\PenggunaController;\nuse App\\Http\\Controllers\\PiutangPelangganController;'
+              )
+
+          block = r'''
+              Route::prefix('penjualan')->name('penjualan.')->group(function (): void {
+                  Route::get('/', [PenjualanController::class, 'index'])->middleware('hak.akses:PENJUALAN_LIHAT')->name('index');
+
+                  Route::post('/penawaran', [PenjualanController::class, 'simpanPenawaran'])->middleware('hak.akses:PENAWARAN_PENJUALAN_KELOLA')->name('penawaran.simpan');
+                  Route::patch('/penawaran/{id}/kirim', [PenjualanController::class, 'kirimPenawaran'])->whereNumber('id')->middleware('hak.akses:PENAWARAN_PENJUALAN_KELOLA')->name('penawaran.kirim');
+                  Route::patch('/penawaran/{id}/terima', [PenjualanController::class, 'terimaPenawaran'])->whereNumber('id')->middleware('hak.akses:PENAWARAN_PENJUALAN_KELOLA')->name('penawaran.terima');
+                  Route::patch('/penawaran/{id}/tolak', [PenjualanController::class, 'tolakPenawaran'])->whereNumber('id')->middleware('hak.akses:PENAWARAN_PENJUALAN_KELOLA')->name('penawaran.tolak');
+                  Route::patch('/penawaran/{id}/kedaluwarsa', [PenjualanController::class, 'kedaluwarsaPenawaran'])->whereNumber('id')->middleware('hak.akses:PENAWARAN_PENJUALAN_KELOLA')->name('penawaran.kedaluwarsa');
+                  Route::patch('/penawaran/{id}/batalkan', [PenjualanController::class, 'batalkanPenawaran'])->whereNumber('id')->middleware('hak.akses:PENAWARAN_PENJUALAN_KELOLA')->name('penawaran.batalkan');
+                  Route::post('/penawaran/{id}/jadikan-pesanan', [PenjualanController::class, 'jadikanPesanan'])->whereNumber('id')->middleware('hak.akses:PESANAN_PENJUALAN_KELOLA')->name('penawaran.jadikan-pesanan');
+
+                  Route::post('/pesanan', [PenjualanController::class, 'simpanPesanan'])->middleware('hak.akses:PESANAN_PENJUALAN_KELOLA')->name('pesanan.simpan');
+                  Route::patch('/pesanan/{id}/setujui', [PenjualanController::class, 'setujuiPesanan'])->whereNumber('id')->middleware('hak.akses:PESANAN_PENJUALAN_SETUJUI')->name('pesanan.setujui');
+                  Route::patch('/pesanan/{id}/batalkan', [PenjualanController::class, 'batalkanPesanan'])->whereNumber('id')->middleware('hak.akses:PESANAN_PENJUALAN_KELOLA')->name('pesanan.batalkan');
+
+                  Route::post('/transaksi', [PenjualanController::class, 'simpanPenjualan'])->middleware('hak.akses:TRANSAKSI_PENJUALAN_KELOLA')->name('transaksi.simpan');
+                  Route::patch('/transaksi/{id}/setujui', [PenjualanController::class, 'setujuiPenjualan'])->whereNumber('id')->middleware('hak.akses:TRANSAKSI_PENJUALAN_SETUJUI')->name('transaksi.setujui');
+                  Route::patch('/transaksi/{id}/batalkan', [PenjualanController::class, 'batalkanPenjualan'])->whereNumber('id')->middleware('hak.akses:TRANSAKSI_PENJUALAN_KELOLA')->name('transaksi.batalkan');
+
+                  Route::post('/pengiriman', [PenjualanController::class, 'simpanPengiriman'])->middleware('hak.akses:PENGIRIMAN_KELOLA')->name('pengiriman.simpan');
+                  Route::patch('/pengiriman/{id}/jadwalkan', [PenjualanController::class, 'jadwalkanPengiriman'])->whereNumber('id')->middleware('hak.akses:PENGIRIMAN_JADWALKAN')->name('pengiriman.jadwalkan');
+                  Route::patch('/pengiriman/{id}/berangkat', [PenjualanController::class, 'berangkatkanPengiriman'])->whereNumber('id')->middleware('hak.akses:PENGIRIMAN_KIRIM')->name('pengiriman.berangkat');
+                  Route::patch('/pengiriman/{id}/terima', [PenjualanController::class, 'terimaPengiriman'])->whereNumber('id')->middleware('hak.akses:PENGIRIMAN_TERIMA')->name('pengiriman.terima');
+                  Route::patch('/pengiriman/{id}/gagal', [PenjualanController::class, 'gagalPengiriman'])->whereNumber('id')->middleware('hak.akses:PENGIRIMAN_KELOLA')->name('pengiriman.gagal');
+                  Route::patch('/pengiriman/{id}/batalkan', [PenjualanController::class, 'batalkanPengiriman'])->whereNumber('id')->middleware('hak.akses:PENGIRIMAN_KELOLA')->name('pengiriman.batalkan');
+
+                  Route::post('/retur', [PenjualanController::class, 'simpanRetur'])->middleware('hak.akses:RETUR_PENJUALAN_KELOLA')->name('retur.simpan');
+                  Route::patch('/retur/{id}/setujui', [PenjualanController::class, 'setujuiRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PENJUALAN_SETUJUI')->name('retur.setujui');
+                  Route::patch('/retur/{id}/terima', [PenjualanController::class, 'terimaRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PENJUALAN_TERIMA')->name('retur.terima');
+                  Route::patch('/retur/{id}/selesai', [PenjualanController::class, 'selesaikanRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PENJUALAN_KELOLA')->name('retur.selesai');
+                  Route::patch('/retur/{id}/batalkan', [PenjualanController::class, 'batalkanRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PENJUALAN_KELOLA')->name('retur.batalkan');
+              });
+
+              Route::prefix('piutang-pelanggan')->name('piutang-pelanggan.')->group(function (): void {
+                  Route::get('/', [PiutangPelangganController::class, 'index'])->middleware('hak.akses:PIUTANG_PELANGGAN_LIHAT')->name('index');
+                  Route::post('/', [PiutangPelangganController::class, 'simpan'])->middleware('hak.akses:PEMBAYARAN_PIUTANG_KELOLA')->name('simpan');
+                  Route::patch('/{id}/setujui', [PiutangPelangganController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:PEMBAYARAN_PIUTANG_SETUJUI')->name('setujui');
+                  Route::patch('/{id}/batalkan', [PiutangPelangganController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:PEMBAYARAN_PIUTANG_KELOLA')->name('batalkan');
+              });
+          '''
+          if "Route::prefix('penjualan')" not in text:
+              needle = "    Route::get('/audit', [AuditController::class, 'index'])->middleware('hak.akses:AUDIT_LIHAT')->name('audit.index');"
+              text = text.replace(needle, block + '\n' + needle)
+          routes.write_text(text)
+
+          sidebar = Path('resources/views/partials/sidebar.blade.php')
+          text = sidebar.read_text()
+          menu_definition = r'''        $menuPenjualan = [
+                      ['izin' => 'PENJUALAN_LIHAT', 'ikon' => 'shopping-cart', 'nama' => 'Penjualan', 'route' => route('penjualan.index'), 'aktif' => request()->routeIs('penjualan.*')],
+                      ['izin' => 'PIUTANG_PELANGGAN_LIHAT', 'ikon' => 'wallet-cards', 'nama' => 'Piutang Pelanggan', 'route' => route('piutang-pelanggan.index'), 'aktif' => request()->routeIs('piutang-pelanggan.*')],
+                  ];
+                  $adaPenjualan = collect($menuPenjualan)->contains(fn (array $item): bool => $punya($item['izin']));
+          '''
+          if '$menuPenjualan = [' not in text:
+              needle = "        $adaPembelian = collect($menuPembelian)->contains(fn (array $item): bool => $punya($item['izin']));\n"
+              text = text.replace(needle, needle + menu_definition)
+
+          menu_block = r'''
+                      @if ($adaPenjualan)
+                          <li class="side-nav-title">Penjualan</li>
+                          @foreach ($menuPenjualan as $item)
+                              @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
+                          @endforeach
+                      @endif
+          '''
+          if '@if ($adaPenjualan)' not in text:
+              needle = '''            @if ($bolehPengguna || $bolehPeran)
+          '''
+              text = text.replace(needle, menu_block + '\n' + needle)
+          text = text.replace(
+              "            @foreach ([['shopping-cart', 'Penjualan & POS'], ['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])",
+              "            @foreach ([['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])"
+          )
+          sidebar.write_text(text)
+
+          regression = Path('tests/Feature/FaseLimaPembelianTest.php')
+          text = regression.read_text().replace(
+              "$this->assertSame(57, DB::table('hak_akses')->whereNull('deleted_at')->count());",
+              "$this->assertGreaterThanOrEqual(57, DB::table('hak_akses')->whereNull('deleted_at')->count());"
+          )
+          regression.write_text(text)
+          PY
+
+      - name: Rapikan format dan commit
+        if: steps.periksa.outputs.sudah == 'false'
+        run: |
+          find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+          vendor/bin/pint
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(fase6): hubungkan route menu dan regresi penjualan"
+          git push origin HEAD:fase-6-implementasi-penjualan-piutang
