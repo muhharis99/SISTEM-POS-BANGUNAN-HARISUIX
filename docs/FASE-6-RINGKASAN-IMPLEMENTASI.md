@@ -4,11 +4,13 @@
 
 **IMPLEMENTASI BERJALAN — BELUM LULUS.**
 
-- Branch: `fase-6-penjualan-piutang`
-- Pull request: Draft PR #7
+- Branch: `fase-6-penjualan-piutang-pengiriman`
+- Pull request: Draft PR implementasi baru
 - Target: `main`
 - Auto-merge: dilarang
 - Fase 7: belum dimulai
+
+PR #7 sebelumnya hanya berisi dokumentasi awal. Implementasi teknis Fase 6 dilakukan pada branch dan Draft PR baru ini.
 
 ## Alur dokumen
 
@@ -36,4 +38,4 @@
 
 ## Permission Fase 6
 
-Permission akan dipisahkan untuk penawaran, pesanan, penjualan, piutang, pembayaran, pengiriman, retur, dan laporan agar setiap endpoint tetap terlindungi di sisi server.
+Permission dipisahkan untuk penawaran, pesanan, penjualan, piutang, pembayaran, pengiriman, retur, dan laporan agar setiap endpoint tetap terlindungi di sisi server.
