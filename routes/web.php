@@ -9,9 +9,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GudangController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\PenyesuaianStokController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PeranController;
+use App\Http\Controllers\PersediaanController;
 use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\StokAwalController;
+use App\Http\Controllers\StokOpnameController;
+use App\Http\Controllers\TransferStokController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -88,6 +93,47 @@ Route::middleware(['auth', 'cabang.aktif'])->group(function (): void {
         Route::post('/', [DaftarHargaController::class, 'simpan'])->middleware('hak.akses:DAFTAR_HARGA_KELOLA')->name('simpan');
         Route::put('/{id}', [DaftarHargaController::class, 'ubah'])->whereNumber('id')->middleware('hak.akses:DAFTAR_HARGA_KELOLA')->name('ubah');
         Route::patch('/{id}/status', [DaftarHargaController::class, 'ubahStatus'])->whereNumber('id')->middleware('hak.akses:DAFTAR_HARGA_KELOLA')->name('status');
+    });
+
+    Route::prefix('persediaan')->name('persediaan.')->group(function (): void {
+        Route::get('/', [PersediaanController::class, 'index'])->middleware('hak.akses:PERSEDIAAN_LIHAT')->name('index');
+        Route::get('/kartu/{idBarang}', [PersediaanController::class, 'kartu'])->whereNumber('idBarang')->middleware('hak.akses:LAPORAN_STOK_LIHAT')->name('kartu');
+    });
+
+    Route::prefix('stok-awal')->name('stok-awal.')->group(function (): void {
+        Route::get('/', [StokAwalController::class, 'index'])->middleware('hak.akses:STOK_AWAL_KELOLA')->name('index');
+        Route::post('/', [StokAwalController::class, 'simpan'])->middleware('hak.akses:STOK_AWAL_KELOLA')->name('simpan');
+        Route::put('/{id}', [StokAwalController::class, 'ubah'])->whereNumber('id')->middleware('hak.akses:STOK_AWAL_KELOLA')->name('ubah');
+        Route::patch('/{id}/setujui', [StokAwalController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:STOK_AWAL_SETUJUI')->name('setujui');
+        Route::patch('/{id}/batalkan', [StokAwalController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:STOK_AWAL_KELOLA')->name('batalkan');
+    });
+
+    Route::prefix('transfer-stok')->name('transfer-stok.')->group(function (): void {
+        Route::get('/', [TransferStokController::class, 'index'])->middleware('hak.akses:TRANSFER_STOK_KELOLA')->name('index');
+        Route::post('/', [TransferStokController::class, 'simpan'])->middleware('hak.akses:TRANSFER_STOK_KELOLA')->name('simpan');
+        Route::put('/{id}', [TransferStokController::class, 'ubah'])->whereNumber('id')->middleware('hak.akses:TRANSFER_STOK_KELOLA')->name('ubah');
+        Route::patch('/{id}/setujui', [TransferStokController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:TRANSFER_STOK_SETUJUI')->name('setujui');
+        Route::patch('/{id}/kirim', [TransferStokController::class, 'kirim'])->whereNumber('id')->middleware('hak.akses:TRANSFER_STOK_KIRIM')->name('kirim');
+        Route::patch('/{id}/terima', [TransferStokController::class, 'terima'])->whereNumber('id')->middleware('hak.akses:TRANSFER_STOK_TERIMA')->name('terima');
+        Route::patch('/{id}/batalkan', [TransferStokController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:TRANSFER_STOK_KELOLA')->name('batalkan');
+    });
+
+    Route::prefix('stok-opname')->name('stok-opname.')->group(function (): void {
+        Route::get('/', [StokOpnameController::class, 'index'])->middleware('hak.akses:STOK_OPNAME_KELOLA')->name('index');
+        Route::post('/', [StokOpnameController::class, 'simpan'])->middleware('hak.akses:STOK_OPNAME_KELOLA')->name('simpan');
+        Route::put('/{id}', [StokOpnameController::class, 'ubah'])->whereNumber('id')->middleware('hak.akses:STOK_OPNAME_KELOLA')->name('ubah');
+        Route::patch('/{id}/mulai', [StokOpnameController::class, 'mulai'])->whereNumber('id')->middleware('hak.akses:STOK_OPNAME_KELOLA')->name('mulai');
+        Route::patch('/{id}/selesai', [StokOpnameController::class, 'selesai'])->whereNumber('id')->middleware('hak.akses:STOK_OPNAME_KELOLA')->name('selesai');
+        Route::patch('/{id}/setujui', [StokOpnameController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:STOK_OPNAME_SETUJUI')->name('setujui');
+        Route::patch('/{id}/batalkan', [StokOpnameController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:STOK_OPNAME_KELOLA')->name('batalkan');
+    });
+
+    Route::prefix('penyesuaian-stok')->name('penyesuaian-stok.')->group(function (): void {
+        Route::get('/', [PenyesuaianStokController::class, 'index'])->middleware('hak.akses:PENYESUAIAN_STOK_KELOLA')->name('index');
+        Route::post('/', [PenyesuaianStokController::class, 'simpan'])->middleware('hak.akses:PENYESUAIAN_STOK_KELOLA')->name('simpan');
+        Route::put('/{id}', [PenyesuaianStokController::class, 'ubah'])->whereNumber('id')->middleware('hak.akses:PENYESUAIAN_STOK_KELOLA')->name('ubah');
+        Route::patch('/{id}/setujui', [PenyesuaianStokController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:PENYESUAIAN_STOK_SETUJUI')->name('setujui');
+        Route::patch('/{id}/batalkan', [PenyesuaianStokController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:PENYESUAIAN_STOK_KELOLA')->name('batalkan');
     });
 
     Route::get('/audit', [AuditController::class, 'index'])

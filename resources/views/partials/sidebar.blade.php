@@ -31,6 +31,14 @@
             ['izin' => 'MASTER_PAJAK_LIHAT', 'ikon' => 'percent', 'nama' => 'Tarif Pajak', 'route' => route('master.index', ['slug' => 'tarif-pajak']), 'aktif' => request()->routeIs('master.*') && request()->route('slug') === 'tarif-pajak'],
         ];
         $adaMaster = collect($menuMaster)->contains(fn (array $item): bool => $punya($item['izin']));
+        $menuPersediaan = [
+            ['izin' => 'PERSEDIAAN_LIHAT', 'ikon' => 'boxes', 'nama' => 'Saldo & Mutasi', 'route' => route('persediaan.index'), 'aktif' => request()->routeIs('persediaan.*')],
+            ['izin' => 'STOK_AWAL_KELOLA', 'ikon' => 'package-plus', 'nama' => 'Stok Awal', 'route' => route('stok-awal.index'), 'aktif' => request()->routeIs('stok-awal.*')],
+            ['izin' => 'TRANSFER_STOK_KELOLA', 'ikon' => 'arrow-left-right', 'nama' => 'Transfer Stok', 'route' => route('transfer-stok.index'), 'aktif' => request()->routeIs('transfer-stok.*')],
+            ['izin' => 'STOK_OPNAME_KELOLA', 'ikon' => 'clipboard-check', 'nama' => 'Stok Opname', 'route' => route('stok-opname.index'), 'aktif' => request()->routeIs('stok-opname.*')],
+            ['izin' => 'PENYESUAIAN_STOK_KELOLA', 'ikon' => 'sliders-horizontal', 'nama' => 'Penyesuaian Stok', 'route' => route('penyesuaian-stok.index'), 'aktif' => request()->routeIs('penyesuaian-stok.*')],
+        ];
+        $adaPersediaan = collect($menuPersediaan)->contains(fn (array $item): bool => $punya($item['izin']));
     @endphp
 
     <div data-simplebar>
@@ -45,6 +53,19 @@
             @if ($adaMaster)
                 <li class="side-nav-title">Master data</li>
                 @foreach ($menuMaster as $item)
+                    @if ($punya($item['izin']))
+                        <li class="side-nav-item">
+                            <a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}">
+                                <span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span>
+                            </a>
+                        </li>
+                    @endif
+                @endforeach
+            @endif
+
+            @if ($adaPersediaan)
+                <li class="side-nav-title">Persediaan</li>
+                @foreach ($menuPersediaan as $item)
                     @if ($punya($item['izin']))
                         <li class="side-nav-item">
                             <a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}">
@@ -74,7 +95,7 @@
             @endif
 
             <li class="side-nav-title">Operasional berikutnya</li>
-            @foreach ([['boxes', 'Persediaan'], ['shopping-bag', 'Pembelian'], ['shopping-cart', 'Penjualan & POS'], ['chart-no-axes-combined', 'Laporan']] as [$ikon, $nama])
+            @foreach ([['shopping-bag', 'Pembelian'], ['shopping-cart', 'Penjualan & POS'], ['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])
                 <li class="side-nav-item"><span class="side-nav-link text-muted"><span class="menu-icon"><i data-lucide="{{ $ikon }}"></i></span><span class="menu-text">{{ $nama }}</span></span></li>
             @endforeach
 
