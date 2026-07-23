@@ -8,9 +8,10 @@
 - Fase 4: lulus dan PR #5 merged ke `main`.
 - Fase 5: lulus dan PR #6 merged ke `main`.
 - PR #7 hanya memuat dokumentasi awal Fase 6 dan sudah merged ke `main`.
-- Fase 6: **implementasi teknis selesai dan seluruh CI otomatis hijau; belum lulus menurut keputusan pemilik**.
+- Fase 6: **LULUS berdasarkan keputusan eksplisit pemilik pada 23 Juli 2026**.
 - Branch: `fase-6-implementasi-penjualan-piutang`.
-- Pull request: Draft PR #8.
+- Pull request: PR #8.
+- Checklist manual: diterima pemilik.
 - Fase 7: belum dimulai.
 
 ## Implementasi yang selesai
@@ -42,7 +43,7 @@
 - Full regression suite berhasil.
 - UBold/Nunito lokal dan visual test berhasil.
 - Audit larangan auto-merge berhasil.
-- Seluruh workflow hijau pada commit teknis `8de670389796f0573b229ec1eee43c3d53670f33`.
+- Seluruh workflow pada commit teknis final telah berhasil sebelum keputusan kelulusan pemilik.
 
 ## Integritas skema paten
 
@@ -52,10 +53,19 @@
 - Tetap 3 view.
 - Fase 6 berhenti sebelum bagian 7: Kas, Bank, dan Akuntansi.
 
-## Gate
+## Keputusan kelulusan
 
-- Draft PR #8 tetap draft dan belum di-merge.
-- Checklist manual belum dinyatakan diterima oleh pemilik.
-- Fase 6 hanya boleh dinyatakan lulus setelah pemilik menyatakan eksplisit `Fase 6 lulus`.
-- Auto-merge dilarang dan tidak digunakan.
-- Fase 7 tidak boleh dimulai tanpa instruksi terpisah.
+Pemilik proyek menyatakan secara eksplisit:
+
+```text
+Fase 6 lulus
+```
+
+Dengan keputusan tersebut:
+
+- checklist manual dinyatakan diterima pemilik;
+- Fase 6 dinyatakan lulus;
+- PR #8 boleh diubah menjadi ready-for-review;
+- PR #8 hanya boleh di-merge setelah CI pada commit checkpoint terbaru tetap hijau dan head SHA dikunci;
+- auto-merge tetap dilarang dan tidak digunakan;
+- Fase 7 tidak dimulai tanpa instruksi terpisah.
