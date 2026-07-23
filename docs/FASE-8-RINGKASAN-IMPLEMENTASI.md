@@ -2,12 +2,13 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS DITERAPKAN — SEDANG DIVERIFIKASI, BELUM LULUS.**
+**FASE 8 LULUS — keputusan eksplisit pemilik diterima pada 23 Juli 2026.**
 
 - Branch: `fase-8-lampiran-audit`
-- Pull request: Draft PR #11
+- Pull request: PR #11
 - Target: `main`
-- Auto-merge: dilarang
+- Checklist manual: diterima pemilik
+- Auto-merge: dilarang dan tidak digunakan
 - Fase 9: belum dimulai
 
 ## Cakupan skema paten
@@ -23,7 +24,7 @@ Tidak ada tabel, kolom, index, foreign key, migration bisnis, atau view yang dit
 
 ### Permission dan setup
 
-Fase 8 menambahkan 6 permission. Total target setelah Fase 2 sampai Fase 8 adalah 95 permission aktif:
+Fase 8 menambahkan 6 permission. Total setelah Fase 2 sampai Fase 8 adalah 95 permission aktif:
 
 - `LAMPIRAN_LIHAT`
 - `LAMPIRAN_UNGGAH`
@@ -82,6 +83,14 @@ Workflow Fase 8 memverifikasi:
 - filter, detail, dan ekspor audit;
 - regression test Fase 1 sampai Fase 7.
 
-## Gate
+## Gate merge
 
-Fase 8 tetap belum lulus sampai seluruh CI hijau, checklist pengujian manual diterima, dan pemilik menyatakan eksplisit `Fase 8 lulus`.
+- [x] Implementasi teknis selesai.
+- [x] Checklist manual diterima pemilik.
+- [x] Pemilik menyatakan `Fase 8 lulus`.
+- [x] Pemilik meminta PR #11 digabungkan.
+- [ ] Seluruh workflow pada head kelulusan terbaru hijau.
+- [ ] Expected head SHA dikunci ketika merge.
+- [x] Auto-merge tidak digunakan.
+
+Fase 9 belum dimulai dan tidak boleh dimulai tanpa instruksi terpisah.
