@@ -3,9 +3,10 @@
 ## Checkpoint
 
 - Fase 1 sampai Fase 7: lulus dan sudah digabung ke `main`.
-- Fase 8: **implementasi teknis selesai dan seluruh CI otomatis hijau; belum lulus menurut keputusan pemilik**.
+- Fase 8: **LULUS berdasarkan keputusan eksplisit pemilik pada 23 Juli 2026**.
 - Branch: `fase-8-lampiran-audit`.
-- Pull request: Draft PR #11.
+- Pull request: PR #11.
+- Checklist manual: diterima pemilik.
 - Auto-merge: dilarang dan tidak digunakan.
 - Fase 9 belum dimulai.
 
@@ -50,12 +51,13 @@ Tidak ada tabel, kolom, index, foreign key, migration bisnis, maupun view yang d
 - Full regression suite berhasil.
 - UBold/Nunito lokal dan visual test berhasil.
 - Audit larangan auto-merge berhasil.
-- Seluruh 13 workflow hijau pada commit teknis `63c3c0f0c61bb73ead60ae35d1af236571ba3230`.
+- Seluruh 13 workflow hijau pada checkpoint sebelum kelulusan `12d322544b6685f15eede2bd3dc3121ba8e829ca`.
 
-## Gate
+## Gate merge
 
-- Draft PR #11 tetap draft dan belum di-merge.
-- Checklist manual belum dinyatakan diterima oleh pemilik.
-- Fase 8 hanya boleh dinyatakan lulus setelah pemilik menyatakan eksplisit `Fase 8 lulus`.
-- Auto-merge dilarang dan tidak digunakan.
+- Pemilik menyatakan eksplisit Fase 8 lulus dan meminta PR digabungkan.
+- Checklist manual diterima pemilik berdasarkan keputusan kelulusan.
+- Seluruh CI pada head kelulusan terbaru wajib hijau sebelum merge.
+- Expected head SHA wajib dikunci ketika merge.
+- Auto-merge tidak digunakan.
 - Fase 9 tidak boleh dimulai tanpa instruksi terpisah.
