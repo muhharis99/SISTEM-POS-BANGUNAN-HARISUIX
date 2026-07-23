@@ -2,6 +2,7 @@
 
 use App\Console\Commands\SiapkanAksesFaseDua;
 use App\Console\Commands\SiapkanMasterFaseTiga;
+use App\Console\Commands\SiapkanPersediaanFaseEmpat;
 use App\Console\Commands\VerifikasiSkemaDatabase;
 use App\Http\Middleware\PastikanCabangAktif;
 use App\Http\Middleware\PastikanHakAkses;
@@ -30,5 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
         VerifikasiSkemaDatabase::class,
         SiapkanAksesFaseDua::class,
         SiapkanMasterFaseTiga::class,
+        SiapkanPersediaanFaseEmpat::class,
     ])
     ->create();
