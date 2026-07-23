@@ -2,12 +2,12 @@
 
 ## Status
 
-**IMPLEMENTASI BERJALAN — BELUM LULUS.**
+**LULUS MENURUT KEPUTUSAN EKSPLISIT PEMILIK.**
 
 - Branch: `fase-5-pembelian-hutang`
-- Pull request: Draft PR #6
+- Pull request: PR #6
 - Target: `main`
-- Auto-merge: dilarang
+- Auto-merge: tidak digunakan
 - Fase 6: belum dimulai
 
 ## Alur dokumen
@@ -34,4 +34,14 @@
 
 ## Permission Fase 5
 
-Fase 5 menambahkan 16 permission. Total target setelah Fase 2–5 adalah 57 permission aktif.
+Fase 5 menambahkan 16 permission. Total setelah Fase 2–5 adalah 57 permission aktif.
+
+## Hasil akhir
+
+- 71 base table tetap terjaga.
+- 3 view tetap terjaga.
+- Integration test Fase 5 berhasil.
+- Regression test Fase 1–Fase 4 berhasil.
+- UBold dan Nunito tetap menggunakan aset lokal.
+- Pemilik menyatakan eksplisit `Fase 5 lulus` pada 23 Juli 2026.
+- PR #6 hanya boleh di-merge setelah checkpoint CI terakhir tetap hijau dan head SHA dikunci.
