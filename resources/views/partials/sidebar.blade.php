@@ -39,79 +39,53 @@
             ['izin' => 'PENYESUAIAN_STOK_KELOLA', 'ikon' => 'sliders-horizontal', 'nama' => 'Penyesuaian Stok', 'route' => route('penyesuaian-stok.index'), 'aktif' => request()->routeIs('penyesuaian-stok.*')],
         ];
         $adaPersediaan = collect($menuPersediaan)->contains(fn (array $item): bool => $punya($item['izin']));
+        $menuPembelian = [
+            ['izin' => 'PEMBELIAN_LIHAT', 'ikon' => 'shopping-bag', 'nama' => 'Pembelian', 'route' => route('pembelian.index'), 'aktif' => request()->routeIs('pembelian.*')],
+            ['izin' => 'HUTANG_PEMASOK_LIHAT', 'ikon' => 'hand-coins', 'nama' => 'Hutang Pemasok', 'route' => route('hutang-pemasok.index'), 'aktif' => request()->routeIs('hutang-pemasok.*')],
+        ];
+        $adaPembelian = collect($menuPembelian)->contains(fn (array $item): bool => $punya($item['izin']));
     @endphp
 
     <div data-simplebar>
         <ul class="side-nav">
             <li class="side-nav-title">Menu utama</li>
-            <li class="side-nav-item">
-                <a href="{{ route('dashboard') }}" class="side-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span><span class="menu-text">Dashboard</span>
-                </a>
-            </li>
+            <li class="side-nav-item"><a href="{{ route('dashboard') }}" class="side-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="layout-dashboard"></i></span><span class="menu-text">Dashboard</span></a></li>
 
             @if ($adaMaster)
                 <li class="side-nav-title">Master data</li>
                 @foreach ($menuMaster as $item)
-                    @if ($punya($item['izin']))
-                        <li class="side-nav-item">
-                            <a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}">
-                                <span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span>
-                            </a>
-                        </li>
-                    @endif
+                    @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
                 @endforeach
             @endif
 
             @if ($adaPersediaan)
                 <li class="side-nav-title">Persediaan</li>
                 @foreach ($menuPersediaan as $item)
-                    @if ($punya($item['izin']))
-                        <li class="side-nav-item">
-                            <a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}">
-                                <span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span>
-                            </a>
-                        </li>
-                    @endif
+                    @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
+                @endforeach
+            @endif
+
+            @if ($adaPembelian)
+                <li class="side-nav-title">Pembelian</li>
+                @foreach ($menuPembelian as $item)
+                    @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
                 @endforeach
             @endif
 
             @if ($bolehPengguna || $bolehPeran)
                 <li class="side-nav-title">Organisasi & akses</li>
-                @if ($bolehPengguna)
-                    <li class="side-nav-item">
-                        <a href="{{ route('pengguna.index') }}" class="side-nav-link {{ request()->routeIs('pengguna.*') ? 'active' : '' }}">
-                            <span class="menu-icon"><i data-lucide="users"></i></span><span class="menu-text">Pengguna</span>
-                        </a>
-                    </li>
-                @endif
-                @if ($bolehPeran)
-                    <li class="side-nav-item">
-                        <a href="{{ route('peran.index') }}" class="side-nav-link {{ request()->routeIs('peran.*') ? 'active' : '' }}">
-                            <span class="menu-icon"><i data-lucide="shield-check"></i></span><span class="menu-text">Peran & Hak Akses</span>
-                        </a>
-                    </li>
-                @endif
+                @if ($bolehPengguna)<li class="side-nav-item"><a href="{{ route('pengguna.index') }}" class="side-nav-link {{ request()->routeIs('pengguna.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="users"></i></span><span class="menu-text">Pengguna</span></a></li>@endif
+                @if ($bolehPeran)<li class="side-nav-item"><a href="{{ route('peran.index') }}" class="side-nav-link {{ request()->routeIs('peran.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="shield-check"></i></span><span class="menu-text">Peran & Hak Akses</span></a></li>@endif
             @endif
 
             <li class="side-nav-title">Operasional berikutnya</li>
-            @foreach ([['shopping-bag', 'Pembelian'], ['shopping-cart', 'Penjualan & POS'], ['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])
+            @foreach ([['shopping-cart', 'Penjualan & POS'], ['chart-no-axes-combined', 'Laporan Keuangan']] as [$ikon, $nama])
                 <li class="side-nav-item"><span class="side-nav-link text-muted"><span class="menu-icon"><i data-lucide="{{ $ikon }}"></i></span><span class="menu-text">{{ $nama }}</span></span></li>
             @endforeach
 
             <li class="side-nav-title">Sistem</li>
-            @if ($bolehAudit)
-                <li class="side-nav-item">
-                    <a href="{{ route('audit.index') }}" class="side-nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}">
-                        <span class="menu-icon"><i data-lucide="history"></i></span><span class="menu-text">Audit Aktivitas</span>
-                    </a>
-                </li>
-            @endif
-            <li class="side-nav-item">
-                <a href="{{ route('profil') }}" class="side-nav-link {{ request()->routeIs('profil*') ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="user-cog"></i></span><span class="menu-text">Profil Saya</span>
-                </a>
-            </li>
+            @if ($bolehAudit)<li class="side-nav-item"><a href="{{ route('audit.index') }}" class="side-nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="history"></i></span><span class="menu-text">Audit Aktivitas</span></a></li>@endif
+            <li class="side-nav-item"><a href="{{ route('profil') }}" class="side-nav-link {{ request()->routeIs('profil*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="user-cog"></i></span><span class="menu-text">Profil Saya</span></a></li>
         </ul>
     </div>
 </div>

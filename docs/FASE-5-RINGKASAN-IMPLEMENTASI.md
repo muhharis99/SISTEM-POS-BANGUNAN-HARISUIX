@@ -2,77 +2,36 @@
 
 ## Status
 
-**IMPLEMENTASI DIMULAI — BELUM LULUS.**
+**IMPLEMENTASI BERJALAN — BELUM LULUS.**
 
 - Branch: `fase-5-pembelian-hutang`
+- Pull request: Draft PR #6
 - Target: `main`
-- Pull request: Draft PR Fase 5
 - Auto-merge: dilarang
 - Fase 6: belum dimulai
 
-Fase 5 hanya boleh dinyatakan lulus setelah implementasi selesai, seluruh CI otomatis hijau, checklist manual diterima, dan pemilik menyatakan eksplisit `Fase 5 lulus`.
+## Alur dokumen
 
-## Integritas skema paten
+1. Pengguna membuat permintaan pembelian sebagai draf.
+2. Permintaan diajukan dan disetujui/ditolak oleh pengguna berizin.
+3. Pesanan pembelian dapat mengacu ke detail permintaan dan menyimpan harga, diskon, serta pajak.
+4. Penerimaan barang memvalidasi gudang/lokasi, satuan, lot, kedaluwarsa, dan jumlah terhadap pesanan.
+5. Persetujuan penerimaan membentuk mutasi stok `PEMBELIAN` melalui `LayananPersediaan` Fase 4.
+6. Faktur tunai menjadi lunas saat disetujui; faktur tempo membentuk satu `hutang_pemasok`.
+7. Pembayaran hutang dapat dialokasikan ke beberapa faktur pemasok yang sama dan diproses atomik.
+8. Retur pembelian mengurangi stok melalui mutasi `RETUR_PEMBELIAN`; opsi `POTONG_HUTANG` langsung memperbarui saldo hutang.
 
-Implementasi wajib menggunakan tepat 13 tabel pembelian dan hutang pemasok yang telah tersedia pada `struktur_database_toko_bangunan.sql`. Tidak boleh dibuat migration bisnis, tabel, kolom, index, foreign key, atau view tambahan.
+## Pengaman
 
-## Modul yang dibangun
+- Seluruh transaksi dibatasi oleh cabang aktif.
+- Status dokumen dikunci dengan `lockForUpdate()` sebelum diproses.
+- Jumlah mengikuti `satuan.jumlah_desimal` dan konversi `barang_satuan.nilai_konversi`.
+- Jumlah penerimaan dan faktur tidak boleh melampaui pesanan terkait.
+- Alokasi pembayaran dan potongan tidak boleh melampaui sisa hutang.
+- Retur tidak boleh mengurangi stok melebihi stok tersedia.
+- Semua aksi penting dicatat ke audit aktivitas.
+- Tidak ada perubahan skema paten.
 
-### 1. Permintaan pembelian
+## Permission Fase 5
 
-- CRUD dokumen draf dengan detail barang dan satuan.
-- Pengajuan, persetujuan, penolakan, pembatalan, dan status diproses/selesai.
-- Tingkat kepentingan serta tanggal kebutuhan.
-- Jumlah diminta dan jumlah yang sudah dipesan selalu konsisten.
-
-### 2. Pesanan pembelian
-
-- Pemilihan pemasok, barang, pajak, harga, potongan, biaya pengiriman, dan biaya lain.
-- Sumber detail dapat berasal dari permintaan pembelian.
-- Persetujuan pesanan serta penerimaan sebagian/penuh.
-- Total dokumen dihitung server-side dan tidak mempercayai total dari browser.
-
-### 3. Penerimaan barang
-
-- Penerimaan berdasarkan pesanan atau penerimaan langsung.
-- Pencatatan lokasi gudang, jumlah diterima/ditolak, lot, produksi, kedaluwarsa, dan harga pokok.
-- Saat status menjadi `DITERIMA`, stok bertambah melalui `LayananPersediaan` Fase 4 dan tercatat sebagai mutasi `PEMBELIAN`.
-- Pembatalan tidak boleh meninggalkan saldo atau mutasi ganda.
-
-### 4. Faktur dan hutang pemasok
-
-- Faktur dapat mengacu pada pesanan dan penerimaan.
-- Validasi nomor faktur pemasok unik per pemasok.
-- Perhitungan total, pajak, potongan, pembulatan, pembayaran, dan sisa hutang dilakukan server-side.
-- Faktur tempo yang disetujui membuat atau memperbarui satu baris `hutang_pemasok`.
-
-### 5. Pembayaran hutang
-
-- Satu pembayaran dapat dialokasikan ke beberapa hutang pemasok yang sama.
-- Alokasi tidak boleh melebihi sisa hutang.
-- Kas/bank dan metode pembayaran harus berada dalam cakupan yang sah.
-- Persetujuan pembayaran memperbarui hutang serta status faktur secara atomik.
-
-### 6. Retur pembelian
-
-- Retur dapat mengacu pada faktur pembelian.
-- Barang yang diretur mengurangi stok melalui layanan persediaan Fase 4 sebagai `RETUR_PEMBELIAN`.
-- Penyelesaian retur mendukung potong hutang, tunai, transfer, atau barang pengganti.
-- Retur tidak boleh melebihi jumlah yang pernah diterima/difakturkan dan belum diretur.
-
-### 7. Laporan
-
-- Daftar permintaan dan pesanan pembelian.
-- Penerimaan barang serta selisih diterima/ditolak.
-- Faktur pembelian dan pembelian per pemasok/barang/periode.
-- Saldo hutang, hutang jatuh tempo, umur hutang, pembayaran, dan retur.
-- Semua laporan dibatasi cabang serta permission pengguna.
-
-## Standar teknis
-
-- Seluruh operasi status dan keuangan memakai transaksi database serta penguncian baris yang relevan.
-- Nomor dokumen memakai tabel paten `nomor_dokumen`.
-- Audit aktivitas wajib dicatat.
-- Soft delete hanya untuk dokumen yang masih boleh dihapus dan tidak pernah menghapus histori keuangan/persediaan yang telah disetujui.
-- UI memakai komponen UBold/Nunito lokal yang sudah tersedia.
-- Controller, service, command, route, view, dan test mengikuti pola Fase 2–Fase 4.
+Fase 5 menambahkan 16 permission. Total target setelah Fase 2–5 adalah 57 permission aktif.

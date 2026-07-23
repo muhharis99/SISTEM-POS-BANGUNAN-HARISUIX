@@ -7,8 +7,10 @@ use App\Http\Controllers\CabangAktifController;
 use App\Http\Controllers\DaftarHargaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GudangController;
+use App\Http\Controllers\HutangPemasokController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PenyesuaianStokController;
 use App\Http\Controllers\PeranController;
@@ -29,18 +31,10 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware(['auth', 'cabang.aktif'])->group(function (): void {
     Route::post('/keluar', [LoginController::class, 'keluar'])->name('keluar');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->middleware('hak.akses:DASHBOARD_LIHAT')
-        ->name('dashboard');
-
-    Route::post('/cabang-aktif', [CabangAktifController::class, 'ubah'])
-        ->middleware('hak.akses:CABANG_PILIH')
-        ->name('cabang-aktif.ubah');
-
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('hak.akses:DASHBOARD_LIHAT')->name('dashboard');
+    Route::post('/cabang-aktif', [CabangAktifController::class, 'ubah'])->middleware('hak.akses:CABANG_PILIH')->name('cabang-aktif.ubah');
     Route::get('/profil', [ProfilController::class, 'tampilkan'])->name('profil');
-    Route::put('/profil/kata-sandi', [ProfilController::class, 'ubahKataSandi'])
-        ->middleware('hak.akses:PROFIL_UBAH_KATA_SANDI')
-        ->name('profil.kata-sandi');
+    Route::put('/profil/kata-sandi', [ProfilController::class, 'ubahKataSandi'])->middleware('hak.akses:PROFIL_UBAH_KATA_SANDI')->name('profil.kata-sandi');
 
     Route::prefix('pengguna')->name('pengguna.')->group(function (): void {
         Route::get('/', [PenggunaController::class, 'index'])->middleware('hak.akses:PENGGUNA_LIHAT')->name('index');
@@ -136,7 +130,41 @@ Route::middleware(['auth', 'cabang.aktif'])->group(function (): void {
         Route::patch('/{id}/batalkan', [PenyesuaianStokController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:PENYESUAIAN_STOK_KELOLA')->name('batalkan');
     });
 
-    Route::get('/audit', [AuditController::class, 'index'])
-        ->middleware('hak.akses:AUDIT_LIHAT')
-        ->name('audit.index');
+    Route::prefix('pembelian')->name('pembelian.')->group(function (): void {
+        Route::get('/', [PembelianController::class, 'index'])->middleware('hak.akses:PEMBELIAN_LIHAT')->name('index');
+
+        Route::post('/permintaan', [PembelianController::class, 'simpanPermintaan'])->middleware('hak.akses:PERMINTAAN_PEMBELIAN_KELOLA')->name('permintaan.simpan');
+        Route::patch('/permintaan/{id}/ajukan', [PembelianController::class, 'ajukanPermintaan'])->whereNumber('id')->middleware('hak.akses:PERMINTAAN_PEMBELIAN_KELOLA')->name('permintaan.ajukan');
+        Route::patch('/permintaan/{id}/setujui', [PembelianController::class, 'setujuiPermintaan'])->whereNumber('id')->middleware('hak.akses:PERMINTAAN_PEMBELIAN_SETUJUI')->name('permintaan.setujui');
+        Route::patch('/permintaan/{id}/tolak', [PembelianController::class, 'tolakPermintaan'])->whereNumber('id')->middleware('hak.akses:PERMINTAAN_PEMBELIAN_SETUJUI')->name('permintaan.tolak');
+        Route::patch('/permintaan/{id}/batalkan', [PembelianController::class, 'batalkanPermintaan'])->whereNumber('id')->middleware('hak.akses:PERMINTAAN_PEMBELIAN_KELOLA')->name('permintaan.batalkan');
+
+        Route::post('/pesanan', [PembelianController::class, 'simpanPesanan'])->middleware('hak.akses:PESANAN_PEMBELIAN_KELOLA')->name('pesanan.simpan');
+        Route::patch('/pesanan/{id}/ajukan', [PembelianController::class, 'ajukanPesanan'])->whereNumber('id')->middleware('hak.akses:PESANAN_PEMBELIAN_KELOLA')->name('pesanan.ajukan');
+        Route::patch('/pesanan/{id}/setujui', [PembelianController::class, 'setujuiPesanan'])->whereNumber('id')->middleware('hak.akses:PESANAN_PEMBELIAN_SETUJUI')->name('pesanan.setujui');
+        Route::patch('/pesanan/{id}/batalkan', [PembelianController::class, 'batalkanPesanan'])->whereNumber('id')->middleware('hak.akses:PESANAN_PEMBELIAN_KELOLA')->name('pesanan.batalkan');
+
+        Route::post('/penerimaan', [PembelianController::class, 'simpanPenerimaan'])->middleware('hak.akses:PENERIMAAN_BARANG_KELOLA')->name('penerimaan.simpan');
+        Route::patch('/penerimaan/{id}/terima', [PembelianController::class, 'terimaPenerimaan'])->whereNumber('id')->middleware('hak.akses:PENERIMAAN_BARANG_TERIMA')->name('penerimaan.terima');
+        Route::patch('/penerimaan/{id}/batalkan', [PembelianController::class, 'batalkanPenerimaan'])->whereNumber('id')->middleware('hak.akses:PENERIMAAN_BARANG_KELOLA')->name('penerimaan.batalkan');
+
+        Route::post('/faktur', [PembelianController::class, 'simpanFaktur'])->middleware('hak.akses:FAKTUR_PEMBELIAN_KELOLA')->name('faktur.simpan');
+        Route::patch('/faktur/{id}/setujui', [PembelianController::class, 'setujuiFaktur'])->whereNumber('id')->middleware('hak.akses:FAKTUR_PEMBELIAN_SETUJUI')->name('faktur.setujui');
+        Route::patch('/faktur/{id}/batalkan', [PembelianController::class, 'batalkanFaktur'])->whereNumber('id')->middleware('hak.akses:FAKTUR_PEMBELIAN_KELOLA')->name('faktur.batalkan');
+
+        Route::post('/retur', [PembelianController::class, 'simpanRetur'])->middleware('hak.akses:RETUR_PEMBELIAN_KELOLA')->name('retur.simpan');
+        Route::patch('/retur/{id}/setujui', [PembelianController::class, 'setujuiRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PEMBELIAN_SETUJUI')->name('retur.setujui');
+        Route::patch('/retur/{id}/kirim', [PembelianController::class, 'kirimRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PEMBELIAN_KIRIM')->name('retur.kirim');
+        Route::patch('/retur/{id}/selesai', [PembelianController::class, 'selesaikanRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PEMBELIAN_KELOLA')->name('retur.selesai');
+        Route::patch('/retur/{id}/batalkan', [PembelianController::class, 'batalkanRetur'])->whereNumber('id')->middleware('hak.akses:RETUR_PEMBELIAN_KELOLA')->name('retur.batalkan');
+    });
+
+    Route::prefix('hutang-pemasok')->name('hutang-pemasok.')->group(function (): void {
+        Route::get('/', [HutangPemasokController::class, 'index'])->middleware('hak.akses:HUTANG_PEMASOK_LIHAT')->name('index');
+        Route::post('/', [HutangPemasokController::class, 'simpan'])->middleware('hak.akses:PEMBAYARAN_HUTANG_KELOLA')->name('simpan');
+        Route::patch('/{id}/setujui', [HutangPemasokController::class, 'setujui'])->whereNumber('id')->middleware('hak.akses:PEMBAYARAN_HUTANG_SETUJUI')->name('setujui');
+        Route::patch('/{id}/batalkan', [HutangPemasokController::class, 'batalkan'])->whereNumber('id')->middleware('hak.akses:PEMBAYARAN_HUTANG_KELOLA')->name('batalkan');
+    });
+
+    Route::get('/audit', [AuditController::class, 'index'])->middleware('hak.akses:AUDIT_LIHAT')->name('audit.index');
 });
