@@ -1,0 +1,39 @@
+name: Fase 8 Format Preview
+
+on:
+  push:
+    branches:
+      - fase-8-lampiran-audit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Apply Laravel Pint
+        run: vendor/bin/pint
+      - name: Package formatted changed files
+        run: |
+          mkdir -p formatted
+          git diff --name-only -- '*.php' | while read -r file; do
+            mkdir -p "formatted/$(dirname "$file")"
+            cp "$file" "formatted/$file"
+          done
+          git diff --name-only -- '*.php' > formatted-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fase-8-formatted-files
+          path: |
+            formatted/
+            formatted-files.txt
+          retention-days: 1
+          if-no-files-found: error
