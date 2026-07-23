@@ -2,12 +2,13 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS DITERAPKAN — SEDANG DIUJI, BELUM LULUS.**
+**FASE 6 LULUS — keputusan eksplisit pemilik diterima pada 23 Juli 2026.**
 
 - Branch: `fase-6-implementasi-penjualan-piutang`
-- Pull request: Draft PR #8
+- Pull request: PR #8
 - Target: `main`
-- Auto-merge: dilarang
+- Auto-merge: dilarang dan tidak digunakan
+- Checklist manual: diterima pemilik
 - Fase 7: belum dimulai
 
 ## Alur dokumen
@@ -38,4 +39,16 @@
 
 ## Permission Fase 6
 
-Fase 6 menambahkan 18 permission. Total target setelah Fase 2–Fase 6 adalah 75 permission aktif.
+Fase 6 menambahkan 18 permission. Total setelah Fase 2–Fase 6 adalah 75 permission aktif.
+
+## Hasil akhir
+
+- 71 base table tetap terjaga: 70 tabel bisnis dan `migrations`.
+- 3 view tetap terjaga.
+- Tidak ada tabel infrastruktur Laravel tambahan yang dilarang.
+- Integration test Fase 6 berhasil.
+- Regression test Fase 1–Fase 5 berhasil.
+- UBold dan Nunito tetap menggunakan aset lokal.
+- Pemilik menyatakan eksplisit `Fase 6 lulus` pada 23 Juli 2026.
+- PR #8 boleh diproses menuju ready-for-review dan merge setelah CI pada commit checkpoint terbaru tetap hijau serta head SHA dikunci.
+- Fase 7 hanya boleh dimulai berdasarkan instruksi terpisah dari pemilik.
