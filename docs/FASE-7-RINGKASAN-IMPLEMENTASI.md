@@ -2,12 +2,13 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS DITERAPKAN — SEDANG DIUJI, BELUM LULUS.**
+**FASE 7 LULUS — keputusan eksplisit pemilik diterima pada 23 Juli 2026.**
 
 - Branch: `fase-7-kas-bank-akuntansi`
-- Pull request: Draft PR #10
+- Pull request: PR #10
 - Target: `main`
-- Auto-merge: dilarang
+- Checklist manual: diterima pemilik
+- Auto-merge: dilarang dan tidak digunakan
 - Fase 8: belum dimulai
 
 ## Cakupan skema paten
@@ -26,7 +27,7 @@ Tidak ada tabel, kolom, index, foreign key, migration bisnis, atau view yang dit
 
 ### Permission dan setup
 
-Fase 7 menambahkan 14 permission. Total target setelah Fase 2 sampai Fase 7 adalah 89 permission aktif. Command `php artisan fase7:siapkan` bersifat idempotent dan menyiapkan:
+Fase 7 menambahkan 14 permission. Total setelah Fase 2 sampai Fase 7 adalah 89 permission aktif. Command `php artisan fase7:siapkan` bersifat idempotent dan menyiapkan:
 
 - matriks permission untuk Administrator, Pemilik, Keuangan, dan Kasir;
 - bagan akun bertingkat;
@@ -90,6 +91,13 @@ Saldo kas/bank dihitung dari saldo awal dan transaksi yang sudah disetujui. Lapo
 - tidak ada saldo berjalan baru yang disimpan di luar skema paten;
 - tidak ada perubahan skema database.
 
-## Gate
+## Hasil pengujian dan keputusan
 
-Fase 7 tetap belum lulus sampai seluruh CI hijau, checklist pengujian manual diterima, dan pemilik menyatakan eksplisit `Fase 7 lulus`.
+- seluruh 12 workflow pada checkpoint sebelum kelulusan berhasil;
+- integration test Fase 7 berhasil;
+- regression test Fase 1 sampai Fase 6 berhasil;
+- full regression suite berhasil;
+- checklist manual dinyatakan diterima pemilik;
+- pemilik menyatakan eksplisit `Fase 7 lulus` pada 23 Juli 2026;
+- PR #10 boleh diproses menuju ready-for-review dan merge manual setelah CI pada head terbaru tetap hijau serta expected head SHA dikunci;
+- Fase 8 tidak dimulai tanpa instruksi terpisah.
