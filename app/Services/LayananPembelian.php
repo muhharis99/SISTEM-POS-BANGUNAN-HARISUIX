@@ -7,9 +7,7 @@ use Illuminate\Validation\ValidationException;
 
 class LayananPembelian
 {
-    public function __construct(private readonly LayananPersediaan $persediaan)
-    {
-    }
+    public function __construct(private readonly LayananPersediaan $persediaan) {}
 
     public function nomorBerikutnya(int $idCabang, string $jenis, string $awalan, ?string $tanggal = null): string
     {
