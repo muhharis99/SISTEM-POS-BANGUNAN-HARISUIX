@@ -1,6 +1,9 @@
 name: Terapkan Fase 6 Sekali
 
 on:
+  push:
+    branches:
+      - fase-6-implementasi-penjualan-piutang
   workflow_dispatch:
 
 permissions:
