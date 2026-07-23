@@ -1,9 +1,9 @@
-name: Fase 3 Master Data Test
+name: Fase 4 Persediaan Test
 
 on:
   push:
     branches:
-      - fase-3-master-data
+      - fase-4-persediaan
   pull_request:
     branches:
       - main
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  test-fase-3:
+  test-fase-4:
     runs-on: ubuntu-latest
 
     services:
@@ -62,7 +62,7 @@ jobs:
         run: vendor/bin/pint --test
 
       - name: Backup empty development database before migration
-        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-3.sql
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-4.sql
 
       - name: Run patent schema migration
         run: php artisan migrate --force
@@ -74,7 +74,7 @@ jobs:
           VALUES ('CAB-UJI', 'Cabang Pengujian', 'Alamat Pengujian', 1);
           SQL
 
-      - name: Prepare Phase 2 and Phase 3 administrator fixtures
+      - name: Prepare Phase 2 administrator fixtures
         run: |
           php artisan fase2:siapkan \
             --nama-pengguna=admin_fase2 \
@@ -84,40 +84,49 @@ jobs:
             --nama-pengguna=admin_fase3 \
             --kata-sandi='AdminFase3!2026' \
             --nama-tampilan='Administrator Fase 3'
+          php artisan fase2:siapkan \
+            --nama-pengguna=admin_fase4 \
+            --kata-sandi='AdminFase4!2026' \
+            --nama-tampilan='Administrator Fase 4'
 
-      - name: Backup baseline before Phase 3 seed and tests
-        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-data-fase-3.sql
+      - name: Prepare Phase 3 master data
+        run: php artisan fase3:siapkan
+
+      - name: Backup baseline before Phase 4 setup and tests
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-data-fase-4.sql
 
       - name: Upload pre-change backups
         uses: actions/upload-artifact@v4
         with:
-          name: backup-sebelum-testing-fase-3
+          name: backup-sebelum-testing-fase-4
           path: |
-            backup-sebelum-migrasi-fase-3.sql
-            backup-sebelum-data-fase-3.sql
+            backup-sebelum-migrasi-fase-4.sql
+            backup-sebelum-data-fase-4.sql
           retention-days: 7
           if-no-files-found: error
 
-      - name: Prepare Phase 3 permissions and initial data
-        run: php artisan fase3:siapkan
+      - name: Prepare Phase 4 permissions
+        run: php artisan fase4:siapkan
 
-      - name: Assert patent schema and initial data
+      - name: Assert patent schema and Phase 4 access
         run: |
           BASE_TABLES="$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='BASE TABLE';")"
           VIEWS="$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")"
           test "$BASE_TABLES" = "71"
           test "$VIEWS" = "3"
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_NAME IN ('sessions','cache','jobs','job_batches','failed_jobs','password_reset_tokens');")" = "0"
-          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "29"
-          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM jenis_pelanggan WHERE kode_jenis_pelanggan IN ('UMUM','TUKANG','KONTRAKTOR_PROYEK','TOKO_RESELLER') AND deleted_at IS NULL;")" = "4"
-          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM pelanggan WHERE kode_pelanggan='UMUM' AND nama_pelanggan='PELANGGAN TUNAI' AND deleted_at IS NULL;")" = "1"
-          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM tarif_pajak WHERE kode_tarif_pajak='NON_PAJAK' AND persen_pajak=0 AND deleted_at IS NULL;")" = "1"
-          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM gudang WHERE kode_gudang IN ('RUSAK','RETUR') AND id_cabang=(SELECT id_cabang FROM cabang WHERE kode_cabang='CAB-UJI') AND deleted_at IS NULL;")" = "2"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "41"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE kode_hak_akses IN ('PERSEDIAAN_LIHAT','STOK_AWAL_KELOLA','STOK_AWAL_SETUJUI','TRANSFER_STOK_KELOLA','TRANSFER_STOK_SETUJUI','TRANSFER_STOK_KIRIM','TRANSFER_STOK_TERIMA','STOK_OPNAME_KELOLA','STOK_OPNAME_SETUJUI','PENYESUAIAN_STOK_KELOLA','PENYESUAIAN_STOK_SETUJUI','LAPORAN_STOK_LIHAT') AND deleted_at IS NULL;")" = "12"
 
       - name: Verify schema against final SQL
         run: php artisan skema:verifikasi --rinci
 
-      - name: Run Phase 3 integration tests
+      - name: Run Phase 4 integration tests
+        env:
+          FASE4_INTEGRATION: true
+        run: php artisan test --filter=FaseEmpatPersediaanTest
+
+      - name: Run Phase 3 regression tests
         env:
           FASE3_INTEGRATION: true
         run: php artisan test --filter=FaseTigaMasterDataTest
