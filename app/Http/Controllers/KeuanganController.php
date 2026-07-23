@@ -49,7 +49,8 @@ class KeuanganController extends Controller
             ->leftJoin('kas_bank as kt', 'kt.id_kas_bank', '=', 't.id_kas_bank_tujuan')
             ->leftJoin('kategori_biaya as b', 'b.id_kategori_biaya', '=', 't.id_kategori_biaya')
             ->where('t.id_cabang', $idCabang)
-            ->whereBetween(DB::raw('DATE(t.tanggal_transaksi)'), [$tanggalAwal, $tanggalAkhir])
+            ->whereDate('t.tanggal_transaksi', '>=', $tanggalAwal)
+            ->whereDate('t.tanggal_transaksi', '<=', $tanggalAkhir)
             ->whereNull('t.deleted_at')
             ->select('t.*', 'k.nama_kas_bank', 'kt.nama_kas_bank as nama_kas_bank_tujuan', 'b.nama_kategori_biaya')
             ->orderByDesc('t.tanggal_transaksi')
@@ -75,17 +76,32 @@ class KeuanganController extends Controller
             ->limit(100)
             ->get();
 
+        $saldoDiposting = DB::table('jurnal_umum_detail as d')
+            ->join('jurnal_umum as j', 'j.id_jurnal_umum', '=', 'd.id_jurnal_umum')
+            ->where('j.id_cabang', $idCabang)
+            ->where('j.status_jurnal', 'DIPOSTING')
+            ->whereBetween('j.tanggal_jurnal', [$tanggalAwal, $tanggalAkhir])
+            ->whereNull('j.deleted_at')
+            ->groupBy('d.id_akun_keuangan')
+            ->select(
+                'd.id_akun_keuangan',
+                DB::raw('SUM(d.debet) as total_debet'),
+                DB::raw('SUM(d.kredit) as total_kredit')
+            );
+
         $saldoAkun = DB::table('akun_keuangan as a')
-            ->leftJoin('jurnal_umum_detail as d', 'd.id_akun_keuangan', '=', 'a.id_akun_keuangan')
-            ->leftJoin('jurnal_umum as j', 'j.id_jurnal_umum', '=', 'd.id_jurnal_umum')
+            ->leftJoinSub($saldoDiposting, 's', 's.id_akun_keuangan', '=', 'a.id_akun_keuangan')
             ->where('a.akun_rincian', 1)
             ->where('a.status_aktif', 1)
             ->whereNull('a.deleted_at')
-            ->groupBy('a.id_akun_keuangan', 'a.kode_akun', 'a.nama_akun', 'a.kelompok_akun', 'a.saldo_normal')
             ->select(
-                'a.id_akun_keuangan', 'a.kode_akun', 'a.nama_akun', 'a.kelompok_akun', 'a.saldo_normal',
-                DB::raw("COALESCE(SUM(CASE WHEN j.id_cabang = {$idCabang} AND j.status_jurnal = 'DIPOSTING' AND j.tanggal_jurnal BETWEEN ".DB::getPdo()->quote($tanggalAwal).' AND '.DB::getPdo()->quote($tanggalAkhir).' THEN d.debet ELSE 0 END), 0) as total_debet'),
-                DB::raw("COALESCE(SUM(CASE WHEN j.id_cabang = {$idCabang} AND j.status_jurnal = 'DIPOSTING' AND j.tanggal_jurnal BETWEEN ".DB::getPdo()->quote($tanggalAwal).' AND '.DB::getPdo()->quote($tanggalAkhir).' THEN d.kredit ELSE 0 END), 0) as total_kredit')
+                'a.id_akun_keuangan',
+                'a.kode_akun',
+                'a.nama_akun',
+                'a.kelompok_akun',
+                'a.saldo_normal',
+                DB::raw('COALESCE(s.total_debet, 0) as total_debet'),
+                DB::raw('COALESCE(s.total_kredit, 0) as total_kredit')
             )
             ->orderBy('a.kode_akun')
             ->get()
@@ -97,6 +113,7 @@ class KeuanganController extends Controller
                 return $baris;
             });
 
+        $saldoKasBank = $layanan->saldoKasBank($idCabang, $tanggalAkhir);
         $totalPendapatan = (float) $saldoAkun->where('kelompok_akun', 'PENDAPATAN')->sum('saldo');
         $totalBeban = (float) $saldoAkun->where('kelompok_akun', 'BEBAN')->sum('saldo');
         $labaRugi = round($totalPendapatan - $totalBeban, 2);
@@ -111,14 +128,14 @@ class KeuanganController extends Controller
             'pemetaan' => $pemetaan,
             'transaksiKas' => $transaksiKas,
             'jurnal' => $jurnal,
-            'saldoKasBank' => $layanan->saldoKasBank($idCabang, $tanggalAkhir),
+            'saldoKasBank' => $saldoKasBank,
             'saldoAkun' => $saldoAkun,
             'kasBankPilihan' => DB::table('kas_bank')->where('id_cabang', $idCabang)->where('status_aktif', 1)->whereNull('deleted_at')->orderBy('nama_kas_bank')->get(),
             'kategoriBiayaPilihan' => DB::table('kategori_biaya')->where('status_aktif', 1)->whereNull('deleted_at')->orderBy('nama_kategori_biaya')->get(),
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
             'ringkasan' => [
-                'total_saldo_kas_bank' => (float) $layanan->saldoKasBank($idCabang, $tanggalAkhir)->sum('saldo_berjalan'),
+                'total_saldo_kas_bank' => (float) $saldoKasBank->sum('saldo_berjalan'),
                 'total_pendapatan' => $totalPendapatan,
                 'total_beban' => $totalBeban,
                 'laba_rugi' => $labaRugi,
