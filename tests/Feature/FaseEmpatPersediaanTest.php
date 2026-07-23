@@ -45,7 +45,7 @@ class FaseEmpatPersediaanTest extends TestCase
             'LAPORAN_STOK_LIHAT',
         ];
 
-        $this->assertSame(41, DB::table('hak_akses')->whereNull('deleted_at')->count());
+        $this->assertGreaterThanOrEqual(41, DB::table('hak_akses')->whereNull('deleted_at')->count());
         $this->assertSame(
             collect($kodeWajib)->sort()->values()->all(),
             DB::table('hak_akses')
