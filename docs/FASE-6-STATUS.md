@@ -7,8 +7,12 @@
 - Fase 3: lulus dan merged ke `main`.
 - Fase 4: lulus dan PR #5 merged ke `main`.
 - Fase 5: lulus dan PR #6 merged ke `main`.
-- Fase 6: **sedang dikerjakan** pada branch `fase-6-penjualan-piutang` melalui Draft PR #7.
+- Fase 6: **sedang dikerjakan** pada branch `fase-6-penjualan-piutang-pengiriman` melalui Draft PR implementasi baru.
 - Fase 7: belum dimulai.
+
+## Catatan repository
+
+PR #7 sebelumnya hanya membawa tiga dokumen awal Fase 6 dan sudah terlanjur merged ke `main`. Merge dokumentasi tersebut bukan kelulusan atau penyelesaian Fase 6. Implementasi aplikasi tetap dilakukan melalui branch dan Draft PR baru ini.
 
 ## Ruang lingkup
 
@@ -50,6 +54,6 @@ Fase 6 memakai tepat 13 tabel pada bagian 6 SQL paten:
 
 ## Gate
 
-- Draft PR #7 tidak boleh diubah menjadi ready atau di-merge sebelum seluruh CI hijau, checklist manual diterima, dan pemilik menyatakan eksplisit `Fase 6 lulus`.
+- Draft PR implementasi Fase 6 tidak boleh diubah menjadi ready atau di-merge sebelum seluruh CI hijau, checklist manual diterima, dan pemilik menyatakan eksplisit `Fase 6 lulus`.
 - Auto-merge dilarang.
 - Fase 7 tidak boleh dimulai tanpa instruksi terpisah.
