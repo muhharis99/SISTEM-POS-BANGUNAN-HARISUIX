@@ -1,0 +1,45 @@
+name: Terapkan Overlay Fase 6
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  terapkan-overlay:
+    if: github.head_ref == 'fase-6-implementasi-penjualan-piutang'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch Fase 6
+        uses: actions/checkout@v4
+        with:
+          ref: fase-6-implementasi-penjualan-piutang
+          fetch-depth: 0
+
+      - name: Verifikasi dan ekstrak overlay
+        run: |
+          cat .fase6-paket/chunk-* > /tmp/paket-fase6.tar.gz.b64
+          test "$(sha256sum /tmp/paket-fase6.tar.gz.b64 | awk '{print $1}')" = "49d3847da658347fad04eef080171720a437c7e9f0768a434fd1b5535cbce905"
+          base64 -d /tmp/paket-fase6.tar.gz.b64 > /tmp/paket-fase6.tar.gz
+          test "$(sha256sum /tmp/paket-fase6.tar.gz | awk '{print $1}')" = "ff36ed73b2118a85bd50c55304d582dace52a7c54f6086e4ddae29f20b95ffff"
+          mkdir -p /tmp/fase6-overlay
+          tar -xzf /tmp/paket-fase6.tar.gz -C /tmp/fase6-overlay
+          if find /tmp/fase6-overlay -type f | grep -E '(^|/)(struktur_database_toko_bangunan\.sql|database/migrations/|template_admin_1/)' ; then
+            echo "Overlay memuat jalur yang dilarang."
+            exit 1
+          fi
+          cp -a /tmp/fase6-overlay/. .
+
+      - name: Bersihkan alat sementara dan commit overlay
+        run: |
+          git rm -rf .fase6-paket
+          git rm -f .github/workflows/terapkan-fase-6-sekali.yml
+          git rm -f .github/workflows/terapkan-fase-6-pr.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(fase6): terapkan fondasi penjualan piutang pengiriman dan retur"
+          git push origin HEAD:fase-6-implementasi-penjualan-piutang
