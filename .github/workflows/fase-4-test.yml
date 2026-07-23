@@ -59,25 +59,7 @@ jobs:
         run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Check PHP formatting
-        id: format
-        continue-on-error: true
         run: vendor/bin/pint --test
-
-      - name: Apply Pint in CI and save patch
-        if: steps.format.outcome == 'failure'
-        run: |
-          vendor/bin/pint
-          git diff --binary > laporan-pint-fase-4.patch
-          test -s laporan-pint-fase-4.patch
-
-      - name: Upload Pint patch
-        if: steps.format.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: laporan-pint-fase-4
-          path: laporan-pint-fase-4.patch
-          retention-days: 3
-          if-no-files-found: error
 
       - name: Backup empty development database before migration
         run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-4.sql
@@ -156,7 +138,3 @@ jobs:
 
       - name: Run complete regression suite
         run: php artisan test
-
-      - name: Fail if source formatting was not clean
-        if: steps.format.outcome == 'failure'
-        run: exit 1
