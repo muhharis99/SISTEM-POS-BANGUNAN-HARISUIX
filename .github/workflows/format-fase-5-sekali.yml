@@ -1,0 +1,53 @@
+name: Format Fase 5 Sekali
+
+on:
+  push:
+    branches:
+      - fase-5-pembelian-hutang
+    paths:
+      - '.github/workflows/format-fase-5-sekali.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: format-fase-5-sekali
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch Fase 5
+        uses: actions/checkout@v4
+        with:
+          ref: fase-5-pembelian-hutang
+          fetch-depth: 0
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Jalankan Laravel Pint
+        run: vendor/bin/pint
+
+      - name: Commit hasil format PHP
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app bootstrap config database routes scripts tests
+          git status --short
+          if git diff --cached --quiet; then
+            echo 'Tidak ada perubahan format.'
+            exit 0
+          fi
+          git commit -m "style(fase5): rapikan implementasi dengan Laravel Pint"
+          git push origin HEAD:fase-5-pembelian-hutang
