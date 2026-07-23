@@ -83,13 +83,20 @@ jobs:
           php artisan fase2:siapkan --nama-pengguna=admin_fase6 --kata-sandi='AdminFase6!2026' --nama-tampilan='Administrator Fase 6'
           php artisan fase2:siapkan --nama-pengguna=admin_fase7 --kata-sandi='AdminFase7!2026' --nama-tampilan='Administrator Fase 7'
 
-      - name: Prepare Phase 3 through Phase 7 data and access
+      - name: Prepare Phase 3 through Phase 6 data and access
         run: |
           php artisan fase3:siapkan
           php artisan fase4:siapkan
           php artisan fase5:siapkan
           php artisan fase6:siapkan
-          php artisan fase7:siapkan
+
+      - name: Run Phase 6 regression before Phase 7 permissions
+        env:
+          FASE6_INTEGRATION: true
+        run: php artisan test --filter=FaseEnamPenjualanTest
+
+      - name: Prepare Phase 7 data and access
+        run: php artisan fase7:siapkan
 
       - name: Backup baseline before Phase 7 tests
         run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-testing-fase-7.sql
@@ -121,11 +128,6 @@ jobs:
         env:
           FASE7_INTEGRATION: true
         run: php artisan test --filter=FaseTujuhKeuanganTest
-
-      - name: Run Phase 6 regression tests
-        env:
-          FASE6_INTEGRATION: true
-        run: php artisan test --filter=FaseEnamPenjualanTest
 
       - name: Run Phase 5 regression tests
         env:
