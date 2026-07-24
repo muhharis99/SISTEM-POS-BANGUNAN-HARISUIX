@@ -7,6 +7,7 @@ use App\Console\Commands\VerifikasiSkemaDatabase;
 use App\Http\Controllers\InputPenjualanFinalController;
 use App\Http\Controllers\PenjualanController;
 use App\Http\Controllers\PenjualanOperasionalFinalController;
+use App\Http\Middleware\PastikanAkuntansiReturSiap;
 use App\Http\Middleware\PastikanCabangAktif;
 use App\Http\Middleware\PastikanHakAkses;
 use Illuminate\Foundation\Application;
@@ -37,6 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 $action['uses'] = $controller.'@'.$metode;
                 $action['controller'] = $controller.'@'.$metode;
                 $route->setAction($action);
+
+                if ($metode === 'terimaRetur') {
+                    $route->middleware(PastikanAkuntansiReturSiap::class);
+                }
             }
         },
     )
