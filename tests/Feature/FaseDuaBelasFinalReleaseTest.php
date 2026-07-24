@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\KontrakRilisFinal;
-use App\Services\PembuatPaketRilisFinal;
+use App\Services\PengelolaPaketRilisFinal;
 use App\Services\PemeriksaGoLive;
 use App\Services\PemeriksaPascadeploy;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +54,7 @@ class FaseDuaBelasFinalReleaseTest extends TestCase
 
     public function test_paket_final_dapat_dibuat_diverifikasi_dan_mendeteksi_kerusakan(): void
     {
-        $pembuat = app(PembuatPaketRilisFinal::class);
+        $pembuat = app(PengelolaPaketRilisFinal::class);
         $hasil = $pembuat->buat('v1.0.0', $this->direktoriUji);
 
         $this->assertFileExists($hasil['paket']);
@@ -71,6 +71,7 @@ class FaseDuaBelasFinalReleaseTest extends TestCase
         $this->assertSame($hasil['commit'], $verifikasi['commit']);
         $this->assertTrue($verifikasi['pemeriksaan']['format_manifest']);
         $this->assertTrue($verifikasi['pemeriksaan']['inventaris_berkas']);
+        $this->assertTrue($verifikasi['pemeriksaan']['checksum_inventaris']);
         $this->assertTrue($verifikasi['pemeriksaan']['integritas_kritis']);
         $this->assertTrue($verifikasi['pemeriksaan']['batasan_keamanan']);
 
@@ -89,14 +90,14 @@ class FaseDuaBelasFinalReleaseTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Versi final harus mengikuti pola semver stabil');
 
-        app(PembuatPaketRilisFinal::class)->buat('v1.0.0-rc1', $this->direktoriUji);
+        app(PengelolaPaketRilisFinal::class)->buat('v1.0.0-rc1', $this->direktoriUji);
     }
 
     public function test_smoke_test_dan_gate_go_live_berhasil_dengan_backup_dan_paket_valid(): void
     {
         $this->aturKonfigurasiProduksi();
         $backup = $this->buatBackupUji();
-        $hasilPaket = app(PembuatPaketRilisFinal::class)->buat('v1.0.0', $this->direktoriUji.'/rilis');
+        $hasilPaket = app(PengelolaPaketRilisFinal::class)->buat('v1.0.0', $this->direktoriUji.'/rilis');
 
         $smoke = app(PemeriksaPascadeploy::class)->periksa();
         $this->assertTrue($smoke['berhasil']);
