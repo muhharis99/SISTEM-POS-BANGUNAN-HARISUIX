@@ -117,6 +117,7 @@
             <li class="side-nav-title">Sistem</li>
             @if ($bolehLampiran)<li class="side-nav-item"><a href="{{ route('lampiran.index') }}" class="side-nav-link {{ request()->routeIs('lampiran.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="paperclip"></i></span><span class="menu-text">Lampiran Dokumen</span></a></li>@endif
             @if ($bolehAudit)<li class="side-nav-item"><a href="{{ route('audit.index') }}" class="side-nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="history"></i></span><span class="menu-text">Audit Aktivitas</span></a></li>@endif
+            <li class="side-nav-item"><a href="{{ route('panduan.index') }}" class="side-nav-link {{ request()->routeIs('panduan.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="life-buoy"></i></span><span class="menu-text">Pusat Bantuan</span></a></li>
             <li class="side-nav-item"><a href="{{ route('profil') }}" class="side-nav-link {{ request()->routeIs('profil*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="user-cog"></i></span><span class="menu-text">Profil Saya</span></a></li>
         </ul>
     </div>
