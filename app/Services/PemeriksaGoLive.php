@@ -2,18 +2,15 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 class PemeriksaGoLive
 {
-    private const VERSI_FINAL = 'v1.0.0';
-
-    private const JUMLAH_PERMISSION = 98;
-
     public function __construct(
         private readonly PemeriksaKesiapanProduksi $pemeriksaProduksi,
-        private readonly PembuatPaketRilisFinal $pembuatPaket
+        private readonly PembuatPaketRilisFinal $pembuatPaket,
+        private readonly KontrakRilisFinal $kontrakRilis
     ) {}
 
     public function periksa(?string $direktoriBackup = null, int $maksUsiaBackupJam = 24, ?string $paketRilis = null): array
@@ -24,6 +21,8 @@ class PemeriksaGoLive
 
         $hasil = [];
         $produksi = $this->pemeriksaProduksi->periksa(true);
+        $kontrak = $this->kontrakRilis->periksa();
+
         $this->tambahkan(
             $hasil,
             'kesiapan_produksi',
@@ -32,15 +31,9 @@ class PemeriksaGoLive
         );
         $this->tambahkan(
             $hasil,
-            'versi_final',
-            trim((string) @file_get_contents(base_path('VERSION'))) === self::VERSI_FINAL,
-            'Berkas VERSION harus berisi '.self::VERSI_FINAL.'.'
-        );
-        $this->tambahkan(
-            $hasil,
-            'permission',
-            (int) DB::table('hak_akses')->whereNull('deleted_at')->count() === self::JUMLAH_PERMISSION,
-            'Jumlah permission aktif harus '.self::JUMLAH_PERMISSION.'.'
+            'kontrak_rilis_final',
+            $kontrak['valid'],
+            'Kontrak rilis final 71 tabel, 3 view, 98 permission, dan nol tabel terlarang tidak terpenuhi.'
         );
         $this->tambahkan(
             $hasil,
@@ -104,18 +97,24 @@ class PemeriksaGoLive
                 $this->tambahkan(
                     $hasil,
                     'paket_rilis',
-                    $verifikasi['valid'] && $verifikasi['versi'] === self::VERSI_FINAL,
+                    $verifikasi['valid'] && $verifikasi['versi'] === KontrakRilisFinal::VERSI,
                     'Paket rilis final tidak valid atau versinya tidak sesuai.'
                 );
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $this->tambahkan($hasil, 'paket_rilis', false, 'Paket rilis final tidak dapat diverifikasi.');
             }
         }
 
+        $peringatanProduksi = collect($produksi['pemeriksaan'])
+            ->contains(fn (array $item): bool => $item['status'] === 'PERINGATAN');
+        $peringatanGoLive = collect($hasil)
+            ->contains(fn (array $item): bool => $item['status'] === 'PERINGATAN');
+
         return [
             'siap' => collect($hasil)->every(fn (array $item): bool => $item['status'] !== 'GAGAL'),
-            'memiliki_peringatan' => collect($hasil)->contains(fn (array $item): bool => $item['status'] === 'PERINGATAN'),
+            'memiliki_peringatan' => $peringatanProduksi || $peringatanGoLive,
             'waktu' => now()->toIso8601String(),
+            'kontrak' => $kontrak,
             'backup_terbaru' => $backup ? [
                 'nama' => basename($backup),
                 'usia_jam' => round(max(0, (time() - filemtime($backup)) / 3600), 2),
