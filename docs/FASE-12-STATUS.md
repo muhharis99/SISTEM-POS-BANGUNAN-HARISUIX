@@ -1,16 +1,16 @@
 # Fase 12 — Status
 
-## Checkpoint teknis
+## Keputusan akhir
 
 - Fase 1 sampai Fase 11: lulus dan sudah digabung ke `main`.
-- Fase 12: **implementasi teknis selesai dan seluruh checkpoint otomatis berhasil; belum lulus menurut keputusan pemilik**.
+- Fase 12: **LULUS — diterima pemilik pada 24 Juli 2026**.
 - Branch: `fase-12-final-release-go-live-hypercare`.
-- Pull request: Draft PR #15.
+- Pull request: PR #15.
 - Target versi final: `v1.0.0`.
 - Auto-merge: dilarang dan tidak digunakan.
 - Deployment otomatis ke server: tidak dilakukan.
-- Tag dan GitHub Release final: belum dibuat.
-- Fase 13: belum dimulai.
+- Pernyataan pemilik: `Fase 12 lulus dan silahkan lanjut ke Fase selanjutnya`.
+- Fase 13: diizinkan dimulai setelah Fase 12 berhasil digabung ke `main`.
 
 ## Batasan yang dipertahankan
 
@@ -20,9 +20,9 @@
 - Tidak menambahkan tabel infrastruktur Laravel yang dilarang.
 - Tidak menyimpan kredensial, `.env`, backup, log runtime, private key, atau data transaksi pada paket rilis.
 - Tidak melakukan deployment otomatis ke staging atau produksi.
-- Tidak membuat tag atau GitHub Release final sebelum Fase 12 dinyatakan lulus.
+- Pengujian otomatis tidak dipresentasikan sebagai bukti deployment staging/produksi, simulasi insiden manusia, atau hypercare nyata.
 
-## Implementasi yang selesai
+## Implementasi yang diterima
 
 - versi aplikasi final melalui berkas `VERSION` berisi `v1.0.0`;
 - kontrak rilis final yang menegakkan 71 tabel, 3 view, 98 permission, dan nol tabel infrastruktur terlarang;
@@ -38,9 +38,9 @@
 - release notes final, runbook go-live, observability, respons insiden, hypercare, dan pemeliharaan;
 - workflow CI Fase 12 serta regresi Fase 1 sampai Fase 11.
 
-## Hasil checkpoint otomatis
+## Hasil pengujian final
 
-Seluruh 17 workflow pada head teknis `669a5c9d4b82d368874175d4868fbfa09dea9c7f` berhasil, termasuk:
+Seluruh 17 workflow pada head final `797cd0950e1288fe852d1c99d1638bbce738d603` berhasil, termasuk:
 
 - sintaks Bash;
 - sintaks PHP dan Laravel Pint;
@@ -61,11 +61,10 @@ Seluruh 17 workflow pada head teknis `669a5c9d4b82d368874175d4868fbfa09dea9c7f` 
 - verifikasi aset UBold/Nunito lokal;
 - audit larangan auto-merge.
 
-## Gate
+## Gate publikasi
 
-- Draft PR #15 tetap draft dan belum di-merge.
-- Checklist go-live/staging belum dinyatakan diterima pemilik.
-- Deployment produksi nyata tidak diklaim telah dilakukan.
-- Tag `v1.0.0` dan GitHub Release final belum dibuat.
-- Fase 12 hanya boleh dinyatakan lulus setelah pemilik menyatakan eksplisit `Fase 12 lulus`.
-- Fase 13 tidak boleh dimulai tanpa instruksi terpisah setelah Fase 12 lulus dan berhasil digabung.
+- Checklist go-live diterima berdasarkan keputusan eksplisit pemilik pada 24 Juli 2026.
+- PR #15 boleh ditandai ready-for-review setelah seluruh workflow pada head dokumentasi kelulusan berhasil.
+- Merge wajib dilakukan manual menggunakan expected head SHA terbaru.
+- Tag `v1.0.0` dan GitHub Release final dibuat setelah merge Fase 12 berhasil.
+- Fase 13 boleh dimulai pada branch dan Draft PR terpisah setelah merge Fase 12.
