@@ -98,7 +98,7 @@ body:
     id: batasan
     attributes:
       label: Batasan atau hal yang tidak boleh berubah
-      description: Contoh: SQL paten, rumus laporan, save logic, atau backend tertentu.
+      description: "Contoh: SQL paten, rumus laporan, save logic, atau backend tertentu."
   - type: checkboxes
     id: konfirmasi
     attributes:
