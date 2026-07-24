@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\KontrakRilisFinal;
 use App\Services\PembuatPaketRilisFinal;
 use Illuminate\Console\Command;
 use Throwable;
@@ -14,9 +15,10 @@ class VerifikasiPaketRilisFinal extends Command
 
     protected $description = 'Memverifikasi checksum, manifest, inventaris, skema, dan isi paket rilis final';
 
-    public function handle(PembuatPaketRilisFinal $pembuat): int
+    public function handle(PembuatPaketRilisFinal $pembuat, KontrakRilisFinal $kontrak): int
     {
         try {
+            $kontrak->pastikan();
             $hasil = $pembuat->verifikasi((string) $this->argument('berkas'));
         } catch (Throwable $exception) {
             return $this->gagal($exception->getMessage());
