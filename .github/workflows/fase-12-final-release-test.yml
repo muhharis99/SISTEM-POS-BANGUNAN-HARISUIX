@@ -1,0 +1,244 @@
+name: Fase 12 Final Release Test
+
+on:
+  push:
+    branches:
+      - fase-12-final-release-go-live-hypercare
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-fase-12:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sistem_informasi_toko_bangunan
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, zlib
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php scripts/salin-aset-template.php
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=sistem_informasi_toko_bangunan/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+
+      - name: Check shell syntax
+        run: |
+          bash -n scripts/deploy-production.sh
+          bash -n scripts/rollback-production.sh
+          bash -n scripts/post-deploy-smoke.sh
+          bash -n scripts/hypercare-check.sh
+
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Backup empty database before migration
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-12.sql
+
+      - name: Run patent schema migration
+        run: php artisan migrate --force
+
+      - name: Add explicit branch data
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan <<'SQL'
+          INSERT INTO cabang (kode_cabang, nama_cabang, alamat, status_aktif)
+          VALUES ('CAB-UJI', 'Cabang Pengujian', 'Alamat Pengujian', 1);
+          SQL
+
+      - name: Prepare administrator fixtures
+        run: |
+          php artisan fase2:siapkan --nama-pengguna=admin_fase2 --kata-sandi='AdminFase2!2026' --nama-tampilan='Administrator Fase 2'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase3 --kata-sandi='AdminFase3!2026' --nama-tampilan='Administrator Fase 3'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase4 --kata-sandi='AdminFase4!2026' --nama-tampilan='Administrator Fase 4'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase5 --kata-sandi='AdminFase5!2026' --nama-tampilan='Administrator Fase 5'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase6 --kata-sandi='AdminFase6!2026' --nama-tampilan='Administrator Fase 6'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase7 --kata-sandi='AdminFase7!2026' --nama-tampilan='Administrator Fase 7'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase8 --kata-sandi='AdminFase8!2026' --nama-tampilan='Administrator Fase 8'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase9 --kata-sandi='AdminFase9!2026' --nama-tampilan='Administrator Fase 9'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase10 --kata-sandi='AdminFase10!2026' --nama-tampilan='Administrator Fase 10'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase11 --kata-sandi='AdminFase11!2026' --nama-tampilan='Administrator Fase 11'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase12 --kata-sandi='AdminFase12!2026' --nama-tampilan='Administrator Fase 12'
+
+      - name: Prepare Phase 3 through Phase 9 data and access
+        run: |
+          php artisan fase3:siapkan
+          php artisan fase4:siapkan
+          php artisan fase5:siapkan
+          php artisan fase6:siapkan
+          php artisan fase7:siapkan
+          php artisan fase8:siapkan
+          php artisan fase9:siapkan
+
+      - name: Run Phase 11 regression
+        env:
+          FASE11_INTEGRATION: true
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: php artisan test --filter=FaseSebelasUatSerahTerimaTest
+
+      - name: Run Phase 10 regression
+        env:
+          FASE10_INTEGRATION: true
+        run: php artisan test --filter=FaseSepuluhKesiapanProduksiTest
+
+      - name: Backup baseline before Phase 12 tests
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-testing-fase-12.sql
+
+      - name: Upload pre-change backups
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-sebelum-testing-fase-12
+          path: |
+            backup-sebelum-migrasi-fase-12.sql
+            backup-sebelum-testing-fase-12.sql
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Assert patent schema and unchanged access
+        run: |
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='BASE TABLE';")" = "71"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")" = "3"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_NAME IN ('sessions','cache','jobs','job_batches','failed_jobs','password_reset_tokens');")" = "0"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "98"
+          test "$(cat VERSION)" = "v1.0.0"
+
+      - name: Verify Phase 12 commands
+        run: |
+          php artisan skema:verifikasi --rinci
+          php artisan list | grep 'sistem:buat-paket-rilis-final'
+          php artisan list | grep 'sistem:verifikasi-paket-rilis-final'
+          php artisan list | grep 'sistem:periksa-go-live'
+          php artisan list | grep 'sistem:smoke-test-pascadeploy'
+
+      - name: Run Phase 12 integration tests
+        env:
+          FASE12_INTEGRATION: true
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: php artisan test --filter=FaseDuaBelasFinalReleaseTest
+
+      - name: Create real database backup
+        run: php artisan sistem:backup-database --direktori=storage/app/private/backups/database --retensi-hari=14 --json
+
+      - name: Create and verify final release package
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          php artisan sistem:buat-paket-rilis-final v1.0.0 --json
+          PACKAGE="$(find storage/app/release-final -maxdepth 1 -type f -name '*.tar.gz' | head -n 1)"
+          test -n "$PACKAGE"
+          php artisan sistem:verifikasi-paket-rilis-final "$PACKAGE" --json
+          sha256sum -c "$PACKAGE.sha256"
+          tar -tzf "$PACKAGE" | grep '^manifest-rilis-final.json$'
+          tar -tzf "$PACKAGE" | grep '^inventaris-berkas.json$'
+          tar -tzf "$PACKAGE" | grep '^checksums.sha256$'
+          ! tar -tzf "$PACKAGE" | grep -E '(^|/)(\.env|storage|vendor|node_modules)(/|$)'
+          cp "$PACKAGE" storage/app/release-final/paket-rusak.tar.gz
+          cp "$PACKAGE.sha256" storage/app/release-final/paket-rusak.tar.gz.sha256
+          printf 'rusak' >> storage/app/release-final/paket-rusak.tar.gz
+          ! php artisan sistem:verifikasi-paket-rilis-final storage/app/release-final/paket-rusak.tar.gz --json
+
+      - name: Prepare strict production configuration
+        run: |
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+          sed -i 's#^APP_URL=.*#APP_URL=https://pos.example.test#' .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=file/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=file/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          php artisan optimize
+
+      - name: Run smoke test and strict go-live gate
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          PACKAGE="$(find storage/app/release-final -maxdepth 1 -type f -name 'sistem-pos-bangunan-*.tar.gz' | head -n 1)"
+          php artisan sistem:smoke-test-pascadeploy --json
+          php artisan sistem:periksa-go-live --ketat --backup-direktori=storage/app/private/backups/database --maks-usia-backup=24 --paket="$PACKAGE" --json
+          APP_ROOT="$GITHUB_WORKSPACE" \
+          RELEASE_PACKAGE="$PACKAGE" \
+          BACKUP_DIRECTORY="$GITHUB_WORKSPACE/storage/app/private/backups/database" \
+          PHP_BINARY=php \
+          bash scripts/post-deploy-smoke.sh
+
+      - name: Run hypercare check
+        run: |
+          APP_ROOT="$GITHUB_WORKSPACE" \
+          BACKUP_DIRECTORY="$GITHUB_WORKSPACE/storage/app/private/backups/database" \
+          HYPERCARE_LOG_DIR="$RUNNER_TEMP/hypercare" \
+          LOCK_FILE="$RUNNER_TEMP/hypercare.lock" \
+          PHP_BINARY=php \
+          bash scripts/hypercare-check.sh
+          test "$(find "$RUNNER_TEMP/hypercare" -type f -name '*.json' | wc -l)" -ge 2
+
+      - name: Upload final release package
+        uses: actions/upload-artifact@v4
+        with:
+          name: sistem-pos-bangunan-v1.0.0-fase-12
+          path: |
+            storage/app/release-final/sistem-pos-bangunan-*.tar.gz
+            storage/app/release-final/sistem-pos-bangunan-*.tar.gz.sha256
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Clear production cache before regression
+        run: php artisan optimize:clear
+
+      - name: Run Phase 5 regression tests
+        env:
+          FASE5_INTEGRATION: true
+        run: php artisan test --filter=FaseLimaPembelianTest
+
+      - name: Run Phase 4 regression tests
+        env:
+          FASE4_INTEGRATION: true
+        run: php artisan test --filter=FaseEmpatPersediaanTest
+
+      - name: Run Phase 3 regression tests
+        env:
+          FASE3_INTEGRATION: true
+        run: php artisan test --filter=FaseTigaMasterDataTest
+
+      - name: Run Phase 2 regression tests
+        env:
+          FASE2_INTEGRATION: true
+        run: php artisan test --filter=FaseDuaAutentikasiTest
+
+      - name: Run complete regression suite
+        run: php artisan test
