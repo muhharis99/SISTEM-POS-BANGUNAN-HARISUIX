@@ -153,7 +153,11 @@ class FaseTigaBelasFinalisasiKekuranganTest extends TestCase
         $this->actingAs($admin)->withSession($session)->patch("/penjualan/pengiriman/{$pengiriman->id_pengiriman}/berangkat")->assertSessionHasNoErrors();
 
         $this->assertEqualsWithDelta(10, $this->stok($gudang, $lokasi, $barang), 0.0001);
-        $this->assertSame(1, DB::table('mutasi_stok')->where('jenis_mutasi', 'PENGGANTI_RETUR_KELUAR')->where('id_dokumen', $pengiriman->id_pengiriman)->count());
+        $this->assertSame(1, DB::table('mutasi_stok')
+            ->where('jenis_mutasi', 'LAINNYA')
+            ->where('jenis_dokumen', 'PENGGANTI_RETUR_KELUAR')
+            ->where('id_dokumen', $pengiriman->id_pengiriman)
+            ->count());
 
         $this->actingAs($admin)->withSession($session)->patch("/penjualan/pengiriman/{$pengiriman->id_pengiriman}/terima")->assertSessionHasNoErrors();
         $this->actingAs($admin)->withSession($session)->patch("/penjualan/retur/{$idRetur}/selesai")->assertSessionHasNoErrors();
