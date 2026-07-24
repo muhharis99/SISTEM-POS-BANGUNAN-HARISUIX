@@ -73,9 +73,14 @@ class FaseTigaBelasHardeningPenjualanTest extends TestCase
                 ]],
             ]);
 
+        $response->assertRedirect();
         $response->assertSessionHasNoErrors();
 
         $retur = DB::table('retur_penjualan')->where('id_penjualan', $idPenjualan)->latest('id_retur_penjualan')->first();
+        $this->assertNotNull(
+            $retur,
+            'Retur tidak terbentuk. Status HTTP: '.$response->getStatusCode().' Lokasi: '.(string) $response->headers->get('Location')
+        );
         $detail = DB::table('retur_penjualan_detail')->where('id_retur_penjualan', $retur->id_retur_penjualan)->first();
 
         $this->assertEqualsWithDelta(18000, (float) $retur->total_retur, 0.01);
