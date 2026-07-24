@@ -221,6 +221,9 @@ class LayananLaporanOperasional
     ): Builder {
         return match ($jenis) {
             'penjualan' => $this->queryPenjualan($idCabang, $awal, $akhir, $pencarian)
+                ->leftJoin('penjualan_detail as pd', function ($join): void {
+                    $join->on('pd.id_penjualan', '=', 'pj.id_penjualan')->whereNull('pd.deleted_at');
+                })
                 ->orderByDesc('pj.tanggal_penjualan')
                 ->select(
                     'pj.id_penjualan',
@@ -275,9 +278,6 @@ class LayananLaporanOperasional
     ): Builder {
         return DB::table('penjualan as pj')
             ->leftJoin('pelanggan as pl', 'pl.id_pelanggan', '=', 'pj.id_pelanggan')
-            ->leftJoin('penjualan_detail as pd', function ($join): void {
-                $join->on('pd.id_penjualan', '=', 'pj.id_penjualan')->whereNull('pd.deleted_at');
-            })
             ->where('pj.id_cabang', $idCabang)
             ->whereIn('pj.status_penjualan', self::STATUS_PENJUALAN_AKTIF)
             ->whereNull('pj.deleted_at')
