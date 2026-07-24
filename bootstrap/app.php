@@ -6,7 +6,7 @@ use App\Console\Commands\SiapkanPersediaanFaseEmpat;
 use App\Console\Commands\VerifikasiSkemaDatabase;
 use App\Http\Controllers\InputPenjualanFinalController;
 use App\Http\Controllers\PenjualanController;
-use App\Http\Controllers\PenjualanFinalController;
+use App\Http\Controllers\PenjualanOperasionalFinalController;
 use App\Http\Middleware\PastikanCabangAktif;
 use App\Http\Middleware\PastikanHakAkses;
 use Illuminate\Foundation\Application;
@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $metode = substr($actionName, strlen($awalan));
                 $controller = in_array($metode, ['simpanPenawaran', 'simpanPesanan', 'simpanPenjualan'], true)
                     ? InputPenjualanFinalController::class
-                    : PenjualanFinalController::class;
+                    : PenjualanOperasionalFinalController::class;
 
                 $action = $route->getAction();
                 $action['uses'] = $controller.'@'.$metode;
