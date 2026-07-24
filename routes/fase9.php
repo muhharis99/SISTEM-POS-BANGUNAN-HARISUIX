@@ -6,9 +6,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'cabang.aktif'])->group(function (): void {
     Route::prefix('laporan')->name('laporan.')->group(function (): void {
-        Route::get('/', [LaporanController::class, 'index'])->name('index');
+        Route::get('/', [LaporanController::class, 'index'])
+            ->middleware('hak.akses:DASHBOARD_BISNIS_LIHAT')
+            ->name('index');
         Route::get('/unduh/csv', [LaporanController::class, 'unduh'])
-            ->middleware('hak.akses:LAPORAN_OPERASIONAL_UNDUH')
+            ->middleware(['hak.akses:DASHBOARD_BISNIS_LIHAT', 'hak.akses:LAPORAN_OPERASIONAL_UNDUH'])
             ->name('unduh');
     });
 
