@@ -1,0 +1,11 @@
+[Unit]
+Description=Jadwal backup database Sistem POS Toko Bangunan
+
+[Timer]
+OnCalendar=*-*-* 02:15:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=sistem-pos-backup.service
+
+[Install]
+WantedBy=timers.target
