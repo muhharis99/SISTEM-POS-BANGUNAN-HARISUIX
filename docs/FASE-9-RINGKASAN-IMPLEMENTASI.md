@@ -2,13 +2,13 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS DITERAPKAN — SEDANG DIVERIFIKASI, BELUM LULUS.**
+**FASE 9 LULUS — DITERIMA PEMILIK PADA 24 JULI 2026.**
 
 - Branch: `fase-9-dashboard-laporan-cetak`
-- Pull request: Draft PR #12
+- Pull request: PR #12
 - Target: `main`
-- Auto-merge: dilarang
-- Fase 10: belum dimulai
+- Auto-merge: dilarang dan tidak digunakan
+- Fase 10: dimulai hanya setelah PR #12 berhasil digabung ke `main`
 
 ## Cakupan skema paten
 
@@ -22,7 +22,7 @@ Tidak ada tabel, kolom, index, foreign key, migration bisnis, atau view yang dit
 
 ## Permission dan setup
 
-Fase 9 hanya menambahkan 3 permission baru sehingga target total setelah Fase 2 sampai Fase 9 adalah 98 permission aktif:
+Fase 9 hanya menambahkan 3 permission baru sehingga total setelah Fase 2 sampai Fase 9 adalah 98 permission aktif:
 
 - `DASHBOARD_BISNIS_LIHAT`
 - `LAPORAN_OPERASIONAL_UNDUH`
@@ -90,6 +90,15 @@ Setiap laporan menerapkan filter periode, pencarian, permission khusus, dan isol
 - tidak ada aset eksternal baru;
 - total penjualan dihitung dari header agar transaksi multi-item tidak terhitung berulang.
 
-## Gate
+## Pengujian dan keputusan
 
-Fase 9 tetap belum lulus sampai seluruh CI hijau, checklist pengujian manual diterima, dan pemilik menyatakan eksplisit `Fase 9 lulus`.
+- seluruh workflow otomatis hijau sebelum keputusan kelulusan;
+- skema tetap 71 base table dan 3 view;
+- total 98 permission aktif;
+- integration test Fase 9, isolasi cabang, ekspor, nota, audit, dan full regression berhasil;
+- checklist manual diterima berdasarkan keputusan eksplisit pemilik;
+- pemilik menyatakan `Fase 9 lulus` pada 24 Juli 2026.
+
+## Gate akhir
+
+Fase 9 boleh diproses menuju ready-for-review dan merge manual setelah workflow pada head final hijau. Merge harus memakai expected head SHA terkunci dan tidak boleh memakai auto-merge.
