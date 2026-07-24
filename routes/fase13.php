@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\InputPenjualanFinalController;
 use App\Http\Controllers\PenjualanFinalController;
+use App\Http\Controllers\PenjualanTuntasController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'cabang.aktif'])->prefix('penjualan')->name('penjualan.')->group(function (): void {
@@ -24,7 +25,7 @@ Route::middleware(['auth', 'cabang.aktif'])->prefix('penjualan')->name('penjuala
         ->whereNumber('id')
         ->middleware('hak.akses:PENGIRIMAN_JADWALKAN')
         ->name('pengiriman.jadwalkan');
-    Route::patch('/pengiriman/{id}/berangkat', [PenjualanFinalController::class, 'berangkatkanPengiriman'])
+    Route::patch('/pengiriman/{id}/berangkat', [PenjualanTuntasController::class, 'berangkatkanPengiriman'])
         ->whereNumber('id')
         ->middleware('hak.akses:PENGIRIMAN_KIRIM')
         ->name('pengiriman.berangkat');
@@ -32,7 +33,7 @@ Route::middleware(['auth', 'cabang.aktif'])->prefix('penjualan')->name('penjuala
         ->whereNumber('id')
         ->middleware('hak.akses:PENGIRIMAN_TERIMA')
         ->name('pengiriman.terima');
-    Route::patch('/pengiriman/{id}/gagal', [PenjualanFinalController::class, 'gagalPengiriman'])
+    Route::patch('/pengiriman/{id}/gagal', [PenjualanTuntasController::class, 'gagalPengiriman'])
         ->whereNumber('id')
         ->middleware('hak.akses:PENGIRIMAN_KELOLA')
         ->name('pengiriman.gagal');
