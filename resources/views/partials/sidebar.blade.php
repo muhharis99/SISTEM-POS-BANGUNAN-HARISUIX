@@ -15,13 +15,14 @@
         $bolehPeran = $punya('PERAN_LIHAT');
         $bolehLampiran = $punya('LAMPIRAN_LIHAT');
         $bolehAudit = $punya('AUDIT_LIHAT');
-        $jenisLaporan = collect([
-            'penjualan' => 'LAPORAN_PENJUALAN_LIHAT',
-            'pembelian' => 'LAPORAN_PEMBELIAN_LIHAT',
-            'persediaan' => 'LAPORAN_PERSEDIAAN_LIHAT',
-            'hutang' => 'LAPORAN_HUTANG_PIUTANG_LIHAT',
-            'kas' => 'KEUANGAN_LIHAT',
-        ])->first(fn (string $izin): bool => $punya($izin));
+        $jenisLaporan = match (true) {
+            $punya('LAPORAN_PENJUALAN_LIHAT') => 'penjualan',
+            $punya('LAPORAN_PEMBELIAN_LIHAT') => 'pembelian',
+            $punya('LAPORAN_PERSEDIAAN_LIHAT') => 'persediaan',
+            $punya('LAPORAN_HUTANG_PIUTANG_LIHAT') => 'hutang',
+            $punya('KEUANGAN_LIHAT') => 'kas',
+            default => null,
+        };
         $menuMaster = [
             ['izin' => 'MASTER_BARANG_LIHAT', 'ikon' => 'package-search', 'nama' => 'Barang', 'route' => route('barang.index'), 'aktif' => request()->routeIs('barang.*')],
             ['izin' => 'MASTER_BARANG_LIHAT', 'ikon' => 'folders', 'nama' => 'Kategori Barang', 'route' => route('master.index', ['slug' => 'kategori-barang']), 'aktif' => request()->routeIs('master.*') && request()->route('slug') === 'kategori-barang'],
