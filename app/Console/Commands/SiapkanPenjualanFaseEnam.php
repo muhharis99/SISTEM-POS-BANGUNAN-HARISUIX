@@ -11,7 +11,7 @@ class SiapkanPenjualanFaseEnam extends Command
 {
     protected $signature = 'fase6:siapkan';
 
-    protected $description = 'Menyiapkan permission modul penjualan, piutang, pengiriman, dan retur Fase 6 tanpa mengubah skema paten';
+    protected $description = 'Menyiapkan permission penjualan dan mapping akun retur yang dibutuhkan sistem final tanpa mengubah skema paten';
 
     public function handle(): int
     {
@@ -102,9 +102,37 @@ class SiapkanPenjualanFaseEnam extends Command
                     );
                 }
             }
+
+            $idInduk = (int) DB::table('akun_keuangan')->where('kode_akun', '400000')->value('id_akun_keuangan');
+            DB::table('akun_keuangan')->updateOrInsert(
+                ['kode_akun' => '410110'],
+                [
+                    'id_akun_induk' => $idInduk ?: null,
+                    'nama_akun' => 'Retur dan Potongan Penjualan',
+                    'kelompok_akun' => 'PENDAPATAN',
+                    'saldo_normal' => 'DEBET',
+                    'akun_rincian' => 1,
+                    'status_aktif' => 1,
+                    'updated_at' => now(),
+                    'updated_by' => null,
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                ]
+            );
+
+            $idAkunRetur = (int) DB::table('akun_keuangan')->where('kode_akun', '410110')->value('id_akun_keuangan');
+            DB::table('pemetaan_akun')->updateOrInsert(
+                ['id_cabang' => null, 'kunci_pemetaan' => 'RETUR_PENJUALAN'],
+                [
+                    'id_akun_keuangan' => $idAkunRetur,
+                    'keterangan' => 'Akun kontra-pendapatan untuk retur dan pengembalian dana penjualan',
+                    'updated_at' => now(),
+                    'updated_by' => null,
+                ]
+            );
         });
 
-        $this->info('Permission Fase 6 berhasil disiapkan tanpa perubahan skema.');
+        $this->info('Permission Fase 6 dan mapping RETUR_PENJUALAN berhasil disiapkan tanpa perubahan skema.');
 
         return self::SUCCESS;
     }
