@@ -4,6 +4,9 @@ use App\Console\Commands\SiapkanAksesFaseDua;
 use App\Console\Commands\SiapkanMasterFaseTiga;
 use App\Console\Commands\SiapkanPersediaanFaseEmpat;
 use App\Console\Commands\VerifikasiSkemaDatabase;
+use App\Http\Controllers\InputPenjualanFinalController;
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\PenjualanFinalController;
 use App\Http\Middleware\PastikanCabangAktif;
 use App\Http\Middleware\PastikanHakAkses;
 use Illuminate\Foundation\Application;
@@ -17,7 +20,24 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function (): void {
-            Route::middleware('web')->group(base_path('routes/fase13.php'));
+            foreach (Route::getRoutes() as $route) {
+                $actionName = $route->getActionName();
+                $awalan = PenjualanController::class.'@';
+
+                if (! str_starts_with($actionName, $awalan)) {
+                    continue;
+                }
+
+                $metode = substr($actionName, strlen($awalan));
+                $controller = in_array($metode, ['simpanPenawaran', 'simpanPesanan', 'simpanPenjualan'], true)
+                    ? InputPenjualanFinalController::class
+                    : PenjualanFinalController::class;
+
+                $action = $route->getAction();
+                $action['uses'] = $controller.'@'.$metode;
+                $action['controller'] = $controller.'@'.$metode;
+                $route->setAction($action);
+            }
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
