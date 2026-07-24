@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fase-12-final-release-go-live-hypercare
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
