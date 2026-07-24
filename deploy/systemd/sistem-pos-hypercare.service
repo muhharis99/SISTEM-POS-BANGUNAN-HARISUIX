@@ -1,0 +1,22 @@
+[Unit]
+Description=Sistem POS Bangunan Hypercare Check
+After=network-online.target mysql.service php8.4-fpm.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/sistem-pos-bangunan/current
+Environment=APP_ROOT=/var/www/sistem-pos-bangunan/current
+Environment=BACKUP_DIRECTORY=/var/www/sistem-pos-bangunan/shared/backups/database
+Environment=MAX_BACKUP_AGE_HOURS=24
+ExecStart=/usr/bin/bash /var/www/sistem-pos-bangunan/current/scripts/hypercare-check.sh
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/sistem-pos-bangunan/shared /var/www/sistem-pos-bangunan/current/storage /var/www/sistem-pos-bangunan/current/bootstrap/cache
+
+[Install]
+WantedBy=multi-user.target
