@@ -82,10 +82,11 @@ jobs:
       - name: Check Ruby syntax
         run: ruby -c scripts/verifikasi-issue-form.rb
 
-      - name: Check PHP syntax and formatting
-        run: |
-          find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
-          vendor/bin/pint --test
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
 
       - name: Backup empty database before migration
         run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-13.sql
