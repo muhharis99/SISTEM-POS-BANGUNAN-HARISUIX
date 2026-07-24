@@ -1,10 +1,12 @@
 # Fase 13 — Status
 
-## Checkpoint evaluasi dan hardening
+## Checkpoint penyelesaian teknis
 
 - Fase 1 sampai Fase 12: lulus dan sudah digabung ke `main`.
 - Fase 12 merge commit: `f9ff81a4b0e0e02fe05b61f03db95db10c8e5a6b`.
-- Fase 13: **implementasi operasional dan hardening teknis sedang diverifikasi — belum lulus**.
+- Fase 13: **implementasi dan hardening teknis selesai — menunggu penerimaan checklist operasional dan keputusan pemilik**.
+- Checkpoint teknis tervalidasi: `7f86710f69e922377551a270d621fa955af5989a`.
+- Seluruh 18 workflow pada checkpoint teknis tersebut berhasil.
 - Branch: `fase-13-operasional-pascapeluncuran`.
 - Pull request: Draft PR #16.
 - Versi aplikasi tetap `v1.0.0` sampai maintenance release diterima pemilik.
@@ -21,39 +23,53 @@
 - Tidak menyimpan kredensial, data transaksi lengkap, backup, `.env`, atau bukti insiden sensitif pada repository.
 - Tidak membuat maintenance release, tag, GitHub Release, atau deployment tanpa gate pemilik.
 
-## Evaluasi ulang yang dilakukan
+## Temuan evaluasi yang telah dituntaskan
 
-Evaluasi tidak berhenti pada dokumentasi. Kode transaksi penjualan Fase 6 ditinjau kembali karena area tersebut memengaruhi stok, piutang, kas, dan pengiriman.
+1. Nilai retur tidak lagi mempercayai `harga_satuan` dari browser; nilai dihitung server-side dari detail penjualan sumber.
+2. Detail pengiriman wajib berasal dari header penjualan/pesanan yang dipilih dan dari cabang aktif.
+3. Refund tunai/transfer memiliki gate transaksi kas/bank yang dapat diverifikasi.
+4. Jalur `PENGGANTI_BARANG` sekarang memiliki dokumen pengiriman pengganti, mutasi stok keluar, gate penyelesaian, dan pemulihan stok bila pengiriman gagal.
+5. Input penawaran, pesanan, dan transaksi penjualan menggunakan controller serta Form Request final.
+6. Pemetaan akun kontra `RETUR_PENJUALAN` disiapkan secara idempoten tanpa mengubah skema maupun jumlah permission.
+7. Repository memiliki `SECURITY.md`, `SUPPORT.md`, template PR operasional, Issue Form, dan validator semantik.
+8. Workflow Fase 6 menyimpan artefak diagnostik test agar kegagalan regresi dapat ditelusuri.
 
-Temuan yang dikonfirmasi:
+## Implementasi final
 
-1. nilai retur sebelumnya masih dapat dihitung dari `harga_satuan` yang dikirim browser;
-2. detail pengiriman sebelumnya belum selalu dipastikan berasal dari header penjualan/pesanan yang dipilih;
-3. pengembalian dana tunai/transfer sebelumnya belum memiliki gate transaksi kas/bank yang dapat diverifikasi;
-4. metode `PENGGANTI_BARANG` belum memiliki alur pengiriman pengganti yang dapat diaudit;
-5. repository belum memiliki `SECURITY.md`, `SUPPORT.md`, dan template PR operasional;
-6. validasi Issue Form sebelumnya hanya memeriksa sintaks YAML, belum struktur semantik.
+- Route Fase 13 dimuat setelah route utama sehingga controller final menjadi action efektif.
+- Form Request final diterapkan pada penawaran, pesanan, transaksi penjualan, pengiriman, dan retur berisiko tinggi.
+- Harga retur dihitung proporsional dari `penjualan_detail.total_baris`; manipulasi harga browser tidak memengaruhi nilai retur.
+- Retur `POTONG_PIUTANG` membentuk jurnal retur seimbang dan diposting.
+- Refund TUNAI/TRANSFER membuat transaksi kas KELUAR berstatus DRAF dan retur baru dapat selesai setelah transaksi disetujui.
+- `PENGGANTI_BARANG` membuat pengiriman pengganti berstatus DRAF.
+- Saat barang pengganti diberangkatkan, stok berkurang secara atomik dan idempoten.
+- Bila pengiriman pengganti gagal setelah berangkat, stok dipulihkan tepat satu kali.
+- Retur penggantian barang tidak dapat diselesaikan sebelum pengiriman diterima pelanggan.
+- Mutasi khusus penggantian barang menggunakan `jenis_mutasi = LAINNYA` dan kode proses pada `jenis_dokumen`, sesuai ENUM skema paten.
 
-## Hardening yang diterapkan
+## Bukti pengujian otomatis
 
-- Form Request khusus pengiriman dan retur berisiko tinggi.
-- Nilai retur dihitung proporsional dari `penjualan_detail.total_baris` dan jumlah sumber; harga dari browser tidak dipercaya.
-- Detail pengiriman wajib berasal dari header dokumen yang dipilih, barang harus sama, dan hubungan detail pesanan–penjualan diverifikasi.
-- Armada, pengemudi, kas/bank, gudang, lokasi, piutang, dan dokumen sumber dibatasi pada cabang aktif.
-- Pengembalian TUNAI/TRANSFER membuat transaksi kas/bank KELUAR berstatus DRAF.
-- Retur tunai/transfer tidak dapat diselesaikan sebelum transaksi kas/bank disetujui bagian keuangan.
-- Metode `PENGGANTI_BARANG` ditolak sampai tersedia alur pengiriman pengganti yang dapat diaudit.
-- `SECURITY.md`, `SUPPORT.md`, dan `.github/pull_request_template.md` ditambahkan.
-- Validator semantik `scripts/verifikasi-issue-form.rb` ditambahkan.
-- Integration test Fase 13 membuktikan manipulasi harga retur ditolak secara logis, detail pengiriman silang ditolak, dan refund tunai memiliki gate keuangan.
+Pada checkpoint teknis `7f86710f69e922377551a270d621fa955af5989a`:
 
-## Risiko tersisa yang dicatat
+- seluruh 18 workflow berhasil;
+- syntax check PHP/Ruby, Laravel Pint, dan pemeriksaan shell berhasil;
+- migration pada MySQL 8.4 berhasil;
+- skema tetap 71 base table, 3 view, 98 permission, dan nol tabel infrastruktur terlarang;
+- test route final dan hardening Fase 13 berhasil;
+- test finalisasi penjualan, jurnal retur, refund, dan penggantian barang berhasil;
+- regresi Fase 1 sampai Fase 12 berhasil;
+- full regression suite berhasil;
+- paket final, backup, smoke test, strict go-live gate, dan hypercare check dalam lingkungan CI berhasil;
+- verifikasi UBold/Nunito lokal dan audit larangan auto-merge berhasil.
 
-- Form Request baru mencakup jalur pengiriman dan retur berisiko tinggi; validasi inline lama pada penawaran, pesanan, dan transaksi penjualan belum seluruhnya dipindahkan.
-- Transaksi kas refund memakai mekanisme transaksi kas Fase 7 yang sudah ada. Pemetaan jurnal khusus kontra-penjualan/retur belum ditambahkan karena memerlukan keputusan akuntansi dan gate terpisah.
-- Tag serta GitHub Release `v1.0.0` belum dibuat karena tindakan tersebut tidak tersedia pada konektor yang digunakan.
-- Deployment, SLA nyata, simulasi insiden manusia, dan hypercare produksi tidak diklaim telah dilakukan.
+## Batasan operasional tersisa
+
+- Checklist manual operasional belum diterima pemilik.
+- Deployment staging/produksi nyata belum dilakukan.
+- Tag dan GitHub Release final belum dibuat.
+- SLA nyata, simulasi insiden manusia, serta hypercare produksi belum dijalankan dan tidak diklaim selesai.
+- Konfigurasi akun dan prosedur akuntansi produksi tetap perlu ditinjau pihak akuntansi sebelum go-live nyata.
 
 ## Gate
 
-Fase 13 tetap belum lulus sampai seluruh CI pada head hardening terbaru hijau, checklist operasional diterima, dan pemilik menyatakan eksplisit `Fase 13 lulus`. PR #16 harus tetap draft dan tidak boleh di-merge sebelum gate tersebut terpenuhi. Fase 14 tidak boleh dimulai dari `main` sebelum Fase 13 berhasil digabung.
+Fase 13 tetap berstatus belum lulus secara tata kelola sampai checklist operasional diterima dan pemilik menyatakan eksplisit `Fase 13 lulus`. PR #16 harus tetap Draft dan tidak boleh di-merge sebelum keputusan tersebut. Fase 14 tidak boleh dimulai dari `main` sebelum Fase 13 berhasil digabung secara manual dengan expected head SHA terbaru.
