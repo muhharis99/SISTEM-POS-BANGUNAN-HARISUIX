@@ -21,17 +21,37 @@ jobs:
           php-version: '8.4'
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Capture Pint diagnostics
-        id: pint
-        continue-on-error: true
-        run: vendor/bin/pint --test --format=json > pint-fase-13.json
-      - name: Upload Pint diagnostics
-        if: always()
+      - name: Format Phase 13 files with Pint
+        run: |
+          vendor/bin/pint \
+            tests/Feature/FaseTigaBelasFinalisasiKekuranganTest.php \
+            app/Services/LayananKeuanganFinal.php \
+            app/Providers/AppServiceProvider.php \
+            app/Console/Commands/SiapkanAkuntansiReturFaseTigaBelas.php \
+            app/Http/Requests/Penjualan/SimpanPenjualanFinalRequest.php \
+            app/Http/Requests/Penjualan/SimpanPesananFinalRequest.php \
+            app/Http/Requests/Penjualan/SimpanPenawaranFinalRequest.php \
+            app/Http/Requests/Penjualan/SimpanReturPenjualanDiperkuatRequest.php \
+            app/Http/Controllers/InputPenjualanFinalController.php \
+            app/Http/Controllers/PenjualanFinalController.php \
+            routes/fase13.php
+      - name: Verify Pint after formatting
+        run: vendor/bin/pint --test
+      - name: Upload formatted files
         uses: actions/upload-artifact@v4
         with:
-          name: pint-fase-13
-          path: pint-fase-13.json
+          name: file-terformat-pint-fase-13
+          path: |
+            tests/Feature/FaseTigaBelasFinalisasiKekuranganTest.php
+            app/Services/LayananKeuanganFinal.php
+            app/Providers/AppServiceProvider.php
+            app/Console/Commands/SiapkanAkuntansiReturFaseTigaBelas.php
+            app/Http/Requests/Penjualan/SimpanPenjualanFinalRequest.php
+            app/Http/Requests/Penjualan/SimpanPesananFinalRequest.php
+            app/Http/Requests/Penjualan/SimpanPenawaranFinalRequest.php
+            app/Http/Requests/Penjualan/SimpanReturPenjualanDiperkuatRequest.php
+            app/Http/Controllers/InputPenjualanFinalController.php
+            app/Http/Controllers/PenjualanFinalController.php
+            routes/fase13.php
           retention-days: 2
-      - name: Fail when Pint fails
-        if: steps.pint.outcome == 'failure'
-        run: exit 1
+          if-no-files-found: error
