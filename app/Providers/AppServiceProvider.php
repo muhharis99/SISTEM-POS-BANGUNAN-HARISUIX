@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Controllers\PenjualanController;
-use App\Http\Controllers\PenjualanFinalController;
+use App\Http\Controllers\PenjualanOperasionalFinalController;
 use App\Services\LayananKeuangan;
 use App\Services\LayananKeuanganFinal;
 use Illuminate\Support\Facades\Route;
@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(PenjualanController::class, PenjualanFinalController::class);
+        $this->app->bind(PenjualanController::class, PenjualanOperasionalFinalController::class);
         $this->app->bind(LayananKeuangan::class, LayananKeuanganFinal::class);
     }
 
