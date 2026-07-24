@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Laporan;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -44,8 +45,8 @@ class FilterLaporanRequest extends FormRequest
                     return;
                 }
 
-                $awal = now()->parse($this->string('tanggal_awal')->toString());
-                $akhir = now()->parse($this->string('tanggal_akhir')->toString());
+                $awal = CarbonImmutable::createFromFormat('Y-m-d', $this->string('tanggal_awal')->toString());
+                $akhir = CarbonImmutable::createFromFormat('Y-m-d', $this->string('tanggal_akhir')->toString());
 
                 if ($awal->diffInDays($akhir) > 366) {
                     $validator->errors()->add('tanggal_akhir', 'Rentang laporan maksimal 366 hari.');
