@@ -1,13 +1,17 @@
 # Sistem POS Toko Bangunan HARISUIX
 
-Sistem informasi POS dan operasional toko bangunan berbasis Laravel untuk mengintegrasikan penjualan, pembelian, persediaan, pengiriman, hutang, piutang, kas, bank, akuntansi, laporan, lampiran, dan audit aktivitas dalam satu aplikasi multi-cabang.
+Sistem informasi POS dan operasional toko bangunan berbasis Laravel untuk mengintegrasikan penjualan, pembelian, persediaan, pengiriman, hutang, piutang, kas, bank, akuntansi, laporan, lampiran, audit, deployment, dan dukungan operasional dalam satu aplikasi multi-cabang.
 
 ## Status proyek
 
-- **Fase 1 sampai Fase 9:** lulus dan sudah digabung ke `main`.
-- **Fase 10:** kesiapan produksi, deployment, backup, restore, dan rollback sedang melalui gate akhir pada Draft PR terpisah.
+- **Fase 1 sampai Fase 11:** lulus dan sudah digabung ke `main`.
+- **Fase 12:** implementasi teknis Final Release, Go-Live, Observability, dan Hypercare selesai pada Draft PR terpisah; belum lulus menurut keputusan pemilik.
+- Target versi final: `v1.0.0`.
+- Skema tetap 71 base table dan 3 view paten.
+- Total permission aktif tetap 98.
 - Auto-merge dilarang dan tidak digunakan.
-- Deployment ke server produksi tidak dijalankan otomatis oleh repository.
+- Deployment staging/produksi tidak dijalankan otomatis oleh repository.
+- Tag `v1.0.0` dan GitHub Release final belum dibuat.
 
 ## Teknologi
 
@@ -21,6 +25,7 @@ Sistem informasi POS dan operasional toko bangunan berbasis Laravel untuk mengin
 - PHPUnit/Laravel Test
 - GitHub Actions
 - Nginx dan PHP-FPM untuk contoh produksi
+- systemd untuk contoh backup dan pemeriksaan hypercare
 
 Aplikasi tidak memakai Tailwind, Livewire, atau Inertia.
 
@@ -29,20 +34,20 @@ Aplikasi tidak memakai Tailwind, Livewire, atau Inertia.
 ### Fondasi dan keamanan
 
 - autentikasi dan manajemen sesi;
-- pengguna, pegawai, peran, dan hak akses;
-- pembatasan data berdasarkan cabang aktif;
-- pengaturan aplikasi dan penomoran dokumen atomik;
-- soft delete dan audit field;
+- pengguna, pegawai, peran, serta hak akses;
+- pemilihan dan pembatasan data berdasarkan cabang aktif;
+- pengaturan aplikasi serta penomoran dokumen atomik;
+- soft delete, audit field, dan log aktivitas;
 - validasi hak akses pada backend.
 
 ### Master data
 
 - barang, kategori, merek, satuan, dan konversi satuan;
-- barcode dan daftar harga;
+- barcode serta daftar harga;
 - pelanggan dan jenis pelanggan;
 - pemasok;
 - gudang dan lokasi gudang;
-- kas/bank, metode pembayaran, kategori biaya, pajak, dan armada.
+- kas/bank, metode pembayaran, kategori biaya, pajak, serta armada.
 
 ### Persediaan
 
@@ -62,7 +67,7 @@ Aplikasi tidak memakai Tailwind, Livewire, atau Inertia.
 - faktur pembelian tunai/tempo;
 - hutang pemasok dan alokasi pembayaran;
 - retur pembelian;
-- integrasi stok dan jurnal.
+- integrasi stok dan jurnal operasional yang tersedia.
 
 ### Penjualan dan piutang
 
@@ -82,7 +87,8 @@ Aplikasi tidak memakai Tailwind, Livewire, atau Inertia.
 - daftar akun keuangan;
 - pemetaan akun;
 - jurnal umum seimbang;
-- posting dan pembatalan jurnal.
+- posting dan pembatalan jurnal;
+- neraca saldo, laba/rugi sederhana, dan posisi keuangan sederhana.
 
 ### Lampiran dan audit
 
@@ -95,12 +101,35 @@ Aplikasi tidak memakai Tailwind, Livewire, atau Inertia.
 
 ### Dashboard dan laporan
 
-- KPI penjualan, pembelian, laba kotor, kas/bank, hutang, piutang, dan stok menipis;
+- KPI penjualan, pembelian, laba kotor, kas/bank, hutang, piutang, serta stok menipis;
 - tren penjualan dan barang terlaris;
 - laporan penjualan, pembelian, persediaan, hutang, piutang, serta kas/bank;
 - filter periode dan pencarian;
-- ekspor CSV streaming;
+- ekspor CSV streaming UTF-8;
 - isolasi cabang pada dashboard, laporan, ekspor, dan nota.
+
+### Pusat bantuan dan serah-terima
+
+- Pusat Bantuan berbasis hak akses;
+- panduan pengguna per modul;
+- pencarian panduan sisi klien;
+- manifest release candidate;
+- matriks UAT;
+- panduan pelatihan, dukungan, eskalasi, dan serah-terima operasional.
+
+### Final release dan operasi produksi
+
+- kontrak rilis final `v1.0.0`;
+- paket final dari commit Git aktif;
+- manifest dan inventaris berkas;
+- checksum SHA-256 per komponen, berkas kritis, dan setiap berkas sumber;
+- verifikasi paket serta penolakan paket rusak;
+- readiness dan pemeriksaan produksi;
+- backup/restore database;
+- deployment release atomik dan rollback aplikasi;
+- smoke test pascadeploy;
+- gate go-live berbasis paket dan backup;
+- runbook observability, insiden, hypercare, dan pemeliharaan.
 
 ## Jaminan skema paten
 
@@ -113,7 +142,7 @@ Target skema:
   - `tampilan_stok_tersedia`;
   - `tampilan_hutang_pemasok`;
   - `tampilan_piutang_pelanggan`;
-- 98 permission aktif setelah Fase 9;
+- 98 permission aktif;
 - tidak menggunakan tabel infrastruktur Laravel berikut:
   - `sessions`;
   - `cache`;
@@ -131,7 +160,7 @@ Karena itu konfigurasi bawaan menggunakan session dan cache berbasis file serta 
 - PHP 8.4;
 - Composer 2;
 - MySQL 8/MariaDB;
-- extension `mbstring`, `dom`, `fileinfo`, dan `pdo_mysql`.
+- extension `mbstring`, `dom`, `fileinfo`, `pdo_mysql`, dan `zlib`.
 
 ### Langkah instalasi
 
@@ -159,7 +188,7 @@ php artisan fase2:siapkan \
   --nama-tampilan='Administrator'
 ```
 
-Siapkan permission dan data pendukung fase berikutnya:
+Siapkan permission dan data pendukung:
 
 ```bash
 php artisan fase3:siapkan
@@ -179,22 +208,31 @@ php artisan serve
 
 ## Pengujian
 
-Pemeriksaan format dan test umum:
-
 ```bash
 vendor/bin/pint --test
 php artisan test
-```
-
-Verifikasi skema paten:
-
-```bash
 php artisan skema:verifikasi --rinci
 ```
 
 Integration test setiap fase dijalankan melalui workflow MySQL khusus dengan environment flag masing-masing. Workflow fase terbaru juga menjalankan regresi fase sebelumnya dan full test suite.
 
-## Kesiapan produksi — Fase 10
+## Pusat Bantuan dan manifest release candidate
+
+Pusat Bantuan tersedia di route:
+
+```text
+/panduan
+```
+
+Manifest kandidat rilis:
+
+```bash
+php artisan sistem:buat-manifest-rilis v1.0.0-rc1
+php artisan sistem:verifikasi-manifest-rilis \
+  storage/app/release-candidate/manifest-rilis.json
+```
+
+## Kesiapan produksi
 
 ### Pemeriksaan produksi
 
@@ -204,14 +242,14 @@ php artisan sistem:periksa-produksi --ketat
 php artisan sistem:periksa-produksi --json
 ```
 
-Endpoint:
+Endpoint kesehatan:
 
 ```text
 /up
 /kesiapan
 ```
 
-`/kesiapan` hanya memberikan status umum dan tidak menampilkan nama database, kredensial, path server, atau exception internal.
+`/kesiapan` hanya memberikan status umum dan tidak menampilkan nama database, kredensial, path server, query, atau exception internal.
 
 ### Backup database
 
@@ -227,7 +265,9 @@ Backup dibuat sebagai `.sql.gz` dengan checksum SHA-256. Kredensial MySQL disimp
 
 ```bash
 php artisan down --retry=60
-php artisan sistem:restore-database /lokasi/backup.sql.gz --konfirmasi=RESTORE
+php artisan sistem:restore-database \
+  /lokasi/backup.sql.gz \
+  --konfirmasi=RESTORE
 ```
 
 Restore membuat backup keselamatan secara default dan memverifikasi skema paten setelah proses selesai.
@@ -247,18 +287,73 @@ bash scripts/rollback-production.sh <id-release>
 
 Deployment memakai direktori release dan symlink `current` agar pergantian versi atomik. Rollback aplikasi tidak melakukan rollback database otomatis.
 
-Dokumentasi lengkap:
+## Paket rilis final `v1.0.0`
+
+Buat paket:
+
+```bash
+php artisan sistem:buat-paket-rilis-final v1.0.0
+```
+
+Verifikasi paket:
+
+```bash
+php artisan sistem:verifikasi-paket-rilis-final \
+  storage/app/release-final/sistem-pos-bangunan-1-0-0.tar.gz
+```
+
+Paket final tidak boleh memuat `.env`, kredensial, backup, log runtime, private key, vendor, node_modules, symlink, atau data transaksi.
+
+## Smoke test dan gate go-live
+
+```bash
+php artisan sistem:smoke-test-pascadeploy
+```
+
+```bash
+php artisan sistem:periksa-go-live \
+  --ketat \
+  --backup-direktori=/var/backups/sistem-pos-bangunan/database \
+  --paket=/lokasi/sistem-pos-bangunan-1-0-0.tar.gz
+```
+
+Skrip gabungan pascadeploy:
+
+```bash
+RELEASE_PACKAGE=/lokasi/sistem-pos-bangunan-1-0-0.tar.gz \
+BACKUP_DIRECTORY=/var/backups/sistem-pos-bangunan/database \
+bash scripts/post-deploy-smoke.sh
+```
+
+## Hypercare
+
+Pemeriksaan manual:
+
+```bash
+APP_ROOT=/var/www/sistem-pos-bangunan/current \
+BACKUP_DIRECTORY=/var/www/sistem-pos-bangunan/shared/backups/database \
+bash scripts/hypercare-check.sh
+```
+
+Contoh systemd:
+
+- `deploy/systemd/sistem-pos-hypercare.service`;
+- `deploy/systemd/sistem-pos-hypercare.timer`.
+
+Konfigurasi contoh wajib disesuaikan dengan server nyata.
+
+## Dokumentasi operasional
 
 - `docs/DEPLOYMENT-PRODUKSI.md`;
 - `docs/BACKUP-RESTORE-DATABASE.md`;
-- `docs/FASE-10-CHECKLIST-PENGUJIAN-MANUAL.md`.
-
-Contoh konfigurasi server:
-
-- `deploy/nginx/sistem-pos-bangunan.conf`;
-- `deploy/php-fpm/sistem-pos-bangunan.conf`;
-- `deploy/systemd/sistem-pos-backup.service`;
-- `deploy/systemd/sistem-pos-backup.timer`.
+- `docs/PANDUAN-PENGGUNA.md`;
+- `docs/UAT-RELEASE-CANDIDATE.md`;
+- `docs/SERAH-TERIMA-OPERASIONAL.md`;
+- `docs/RELEASE-NOTES-v1.0.0.md`;
+- `docs/GO-LIVE-RUNBOOK.md`;
+- `docs/OBSERVABILITY-DAN-RESPONS-INSIDEN.md`;
+- `docs/HYPERCARE-DAN-PEMELIHARAAN.md`;
+- `docs/FASE-12-CHECKLIST-PENGUJIAN-MANUAL.md`.
 
 ## Struktur penting repository
 
@@ -291,11 +386,12 @@ blueprint_alur_sistem_erd_toko_bangunan_wiryo_pojok.pdf
 - operasi kritis memakai locking untuk mencegah race condition;
 - nomor dokumen dibuat atomik;
 - setiap perubahan stok menghasilkan mutasi;
-- transaksi cabang lain tidak boleh dapat diakses melalui manipulasi ID;
+- transaksi cabang lain tidak boleh diakses melalui manipulasi ID;
 - data sensitif pada audit disamarkan;
 - lampiran tidak disimpan pada direktori publik;
-- kredensial produksi tidak boleh masuk repository;
+- kredensial produksi tidak boleh masuk repository atau paket rilis;
 - backup wajib diverifikasi dan disalin ke lokasi di luar server utama;
+- database tidak di-rollback otomatis bersama aplikasi;
 - auto-merge tidak digunakan.
 
 ## Pengembang
