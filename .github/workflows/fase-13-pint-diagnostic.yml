@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fase-13-operasional-pascapeluncuran
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
