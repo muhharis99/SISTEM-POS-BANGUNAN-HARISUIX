@@ -70,6 +70,8 @@ jobs:
           test -s docs/FASE-13-CHECKLIST-PENGUJIAN-MANUAL.md
           test -s docs/OPERASIONAL-PASCAPELUNCURAN.md
           test -s docs/SLA-DAN-DUKUNGAN.md
+          test -s docs/RELEASE-DAN-DEPLOYMENT-PRODUKSI.md
+          test -s .github/workflows/release-produksi.yml
           grep -q 'P0' docs/SLA-DAN-DUKUNGAN.md
           grep -q 'Auto-merge' docs/FASE-13-STATUS.md
           grep -q '71 base table' docs/FASE-13-STATUS.md
@@ -108,6 +110,7 @@ jobs:
           php artisan fase7:siapkan
           php artisan fase8:siapkan
           php artisan fase9:siapkan
+          php artisan fase13:siapkan-akuntansi-retur
 
       - name: Assert patent schema and unchanged access
         run: |
@@ -115,13 +118,17 @@ jobs:
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")" = "3"
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_NAME IN ('sessions','cache','jobs','job_batches','failed_jobs','password_reset_tokens');")" = "0"
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "98"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM akun_keuangan WHERE kode_akun='410110' AND nama_akun='Retur dan Potongan Penjualan' AND saldo_normal='DEBET' AND deleted_at IS NULL;")" = "1"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM pemetaan_akun WHERE id_cabang IS NULL AND kunci_pemetaan='RETUR_PENJUALAN';")" = "1"
           test "$(cat VERSION)" = "v1.0.0"
           php artisan skema:verifikasi --rinci
 
       - name: Run Phase 13 sales hardening tests
         env:
           FASE13_INTEGRATION: true
-        run: php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
+        run: |
+          php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
+          php artisan test --filter=FaseTigaBelasFinalisasiKekuranganTest
 
       - name: Run Phase 12 regression
         env:
