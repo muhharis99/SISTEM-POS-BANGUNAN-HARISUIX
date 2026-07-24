@@ -16,5 +16,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Route::middleware('web')->group(base_path('routes/fase8.php'));
         Route::middleware('web')->group(base_path('routes/fase9.php'));
+        Route::middleware('web')->group(base_path('routes/fase10.php'));
     }
 }
