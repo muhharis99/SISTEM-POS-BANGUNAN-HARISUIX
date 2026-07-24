@@ -1,6 +1,8 @@
 # Fase 11 — Checklist Pengujian Manual
 
-Status: **belum diterima pemilik**.
+Status: **diterima pemilik pada 24 Juli 2026 melalui pernyataan eksplisit `Fase 11 lulus`**.
+
+> Penerimaan ini merupakan keputusan pemilik atas checklist, dokumentasi, dan hasil CI. Tanda penerimaan tidak dipresentasikan sebagai bukti bahwa agen menjalankan UAT manusia, pelatihan, serah-terima fisik, atau deployment staging/produksi secara langsung.
 
 ## Persiapan
 
@@ -56,7 +58,7 @@ Status: **belum diterima pemilik**.
 - [ ] Pastikan seluruh modul Fase 1 sampai Fase 10 tercakup.
 - [ ] Pastikan batasan kandidat rilis dijelaskan.
 - [ ] Pastikan tidak ada klaim deployment produksi nyata.
-- [ ] Pastikan tag/GitHub Release final belum dibuat.
+- [ ] Pastikan tag/GitHub Release final belum dibuat sebelum keputusan fase berikutnya.
 
 ## UAT lintas peran
 
@@ -84,22 +86,21 @@ Status: **belum diterima pemilik**.
 
 ## Regresi dan CI
 
-- [ ] Jalankan syntax check dan Laravel Pint.
-- [ ] Jalankan migration SQL paten pada MySQL 8.4.
-- [ ] Jalankan integration test Fase 11.
-- [ ] Jalankan regression Fase 10 dan Fase 9.
-- [ ] Jalankan regression fase sebelumnya.
-- [ ] Jalankan full regression suite.
-- [ ] Pastikan aset UBold dan Nunito tetap lokal.
-- [ ] Pastikan audit larangan auto-merge berhasil.
-- [ ] Pastikan tidak ada tabel, view, atau permission baru.
+- [x] Syntax check dan Laravel Pint berhasil melalui CI.
+- [x] Migration SQL paten pada MySQL 8.4 berhasil melalui CI.
+- [x] Integration test Fase 11 berhasil.
+- [x] Regression Fase 10 dan Fase 9 berhasil.
+- [x] Regression fase sebelumnya berhasil.
+- [x] Full regression suite berhasil.
+- [x] Aset UBold dan Nunito tetap lokal.
+- [x] Audit larangan auto-merge berhasil.
+- [x] Tidak ada tabel, view, atau permission baru.
 
 ## Gate akhir
 
-Fase 11 hanya boleh di-merge setelah seluruh CI hijau, checklist UAT diterima, dan pemilik menyatakan eksplisit:
+- [x] Seluruh CI pada head teknis final hijau.
+- [x] Checklist UAT diterima pemilik.
+- [x] Pemilik menyatakan eksplisit `Fase 11 lulus` pada 24 Juli 2026.
+- [ ] PR #14 digabung manual dengan expected head SHA terbaru setelah CI commit kelulusan hijau.
 
-```text
-Fase 11 lulus
-```
-
-Tag atau GitHub Release final tetap membutuhkan keputusan terpisah setelah merge Fase 11.
+Tag atau GitHub Release final tetap diproses pada fase berikutnya dan tidak dibuat sebagai bagian dari merge Fase 11.
