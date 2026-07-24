@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class FaseDuaBelasFinalReleaseTest extends TestCase
 {
-    private string $direktoriUji;
+    private ?string $direktoriUji = null;
 
     protected function setUp(): void
     {
@@ -36,7 +36,10 @@ class FaseDuaBelasFinalReleaseTest extends TestCase
 
     protected function tearDown(): void
     {
-        File::deleteDirectory($this->direktoriUji);
+        if ($this->direktoriUji !== null) {
+            File::deleteDirectory($this->direktoriUji);
+        }
+
         parent::tearDown();
     }
 
