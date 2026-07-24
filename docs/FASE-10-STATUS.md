@@ -3,14 +3,14 @@
 ## Checkpoint
 
 - Fase 1 sampai Fase 9: lulus dan sudah digabung ke `main`.
-- Fase 10: **implementasi teknis selesai; checkpoint otomatis berhasil, tetapi belum lulus menurut keputusan pemilik**.
+- Fase 10: **LULUS — diterima pemilik pada 24 Juli 2026**.
 - Branch: `fase-10-kesiapan-produksi-deployment`.
-- Pull request: Draft PR #13.
+- Pull request: PR #13.
 - Auto-merge: dilarang dan tidak digunakan.
 - Deployment otomatis ke server: tidak dilakukan.
-- Fase 11 belum dimulai.
+- Fase 11 dimulai setelah Fase 10 berhasil digabung ke `main`.
 
-## Cakupan yang selesai
+## Cakupan yang diterima
 
 - `.env.production.example` dengan konfigurasi aman dan placeholder rahasia;
 - pembatasan proxy tepercaya melalui `TRUSTED_PROXIES` eksplisit;
@@ -23,7 +23,7 @@
 - contoh konfigurasi Nginx, PHP-FPM, dan systemd timer backup;
 - runbook deployment, backup, restore, rollback, permission Linux, dan troubleshooting;
 - workflow CI Fase 10 serta regression fase sebelumnya;
-- README diperbarui sesuai kondisi aplikasi yang sebenarnya.
+- README yang telah diperbarui sesuai kondisi aplikasi.
 
 ## Batasan yang dipertahankan
 
@@ -34,9 +34,7 @@
 - Tidak melakukan deployment otomatis ke server mana pun.
 - Tidak menggunakan auto-merge.
 
-## Hasil checkpoint otomatis
-
-Workflow khusus Fase 10 telah membuktikan:
+## Hasil pengujian otomatis
 
 - sintaks Bash deployment dan rollback berhasil;
 - dry-run deployment dan rollback berhasil;
@@ -51,12 +49,13 @@ Workflow khusus Fase 10 telah membuktikan:
 - backup berhasil dipulihkan ke database kedua;
 - database hasil restore tetap memiliki 71 base table dan 3 view;
 - pemeriksaan produksi mode ketat berhasil;
-- regression Fase 2 sampai Fase 5 dan full suite berhasil.
+- regression fase sebelumnya dan full suite berhasil;
+- seluruh 15 workflow pada checkpoint teknis berhasil.
 
-## Gate
+## Keputusan pemilik
 
-- Draft PR #13 tetap draft dan belum di-merge.
-- Checklist manual belum dinyatakan diterima pemilik.
-- Contoh konfigurasi server belum dianggap sebagai bukti deployment produksi nyata.
-- Fase 10 hanya boleh dinyatakan lulus setelah pemilik menyatakan eksplisit `Fase 10 lulus`.
-- Fase 11 tidak boleh dimulai tanpa instruksi terpisah setelah Fase 10 lulus dan berhasil digabung.
+Pemilik menyatakan eksplisit `Fase 10 lulus` pada 24 Juli 2026. Checklist pengujian manual diterima sebagai gate merge. Contoh konfigurasi serta pengujian otomatis tidak dianggap sebagai bukti bahwa deployment produksi nyata telah dilakukan.
+
+## Gate berikutnya
+
+PR #13 diproses menjadi ready-for-review dan digabung manual ke `main` menggunakan expected head SHA terkunci. Setelah merge berhasil, Fase 11 boleh dimulai pada branch serta Draft PR terpisah.
