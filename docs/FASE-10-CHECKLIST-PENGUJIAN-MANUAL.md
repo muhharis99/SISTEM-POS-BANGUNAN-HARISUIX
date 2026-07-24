@@ -1,166 +1,84 @@
 # Fase 10 — Checklist Pengujian Manual
 
-Status: **belum diterima pemilik**.
+Status: **diterima pemilik pada 24 Juli 2026**.
 
-## Persiapan
+## Catatan penerimaan
 
-- [ ] Pastikan Fase 1 sampai Fase 9 sudah berada pada `main`.
-- [ ] Pastikan branch aktif `fase-10-kesiapan-produksi-deployment`.
+Pemilik telah menyatakan eksplisit `Fase 10 lulus`. Penerimaan ini memenuhi gate proyek untuk merge. Pengujian otomatis membuktikan dry-run deployment/rollback, backup nyata, checksum, restore ke database kedua, verifikasi skema, pemeriksaan produksi ketat, dan regresi aplikasi.
+
+Pengujian yang membutuhkan server staging atau produksi nyata tetap menjadi runbook operasional saat infrastruktur tersedia dan tidak diklaim telah dijalankan oleh repository.
+
+## Persiapan server
+
+- [ ] Pastikan PHP 8.4, Composer, MySQL client, `git`, `tar`, dan `flock` tersedia.
 - [ ] Pastikan tidak ada kredensial produksi nyata dalam repository.
 - [ ] Pastikan tetap 71 base table, 3 view, dan 98 permission aktif.
 - [ ] Pastikan tidak ada migration bisnis atau perubahan SQL paten.
-- [ ] Pastikan server menyediakan PHP 8.4, Composer, MySQL client, `git`, `tar`, dan `flock`.
 
 ## Environment dan hardening
 
-- [ ] Salin `.env.production.example` menjadi `.env` di direktori shared server.
-- [ ] Pastikan `APP_ENV=production`.
-- [ ] Pastikan `APP_DEBUG=false`.
-- [ ] Pastikan `APP_URL` memakai HTTPS.
-- [ ] Pastikan `APP_KEY` valid dan tidak diganti sembarangan.
-- [ ] Pastikan `SESSION_DRIVER=file`.
-- [ ] Pastikan `CACHE_STORE=file`.
-- [ ] Pastikan `QUEUE_CONNECTION=sync`.
+- [ ] Salin `.env.production.example` menjadi `.env` pada direktori shared server.
+- [ ] Atur `APP_ENV=production`, `APP_DEBUG=false`, dan `APP_URL` HTTPS.
+- [ ] Gunakan `SESSION_DRIVER=file`, `CACHE_STORE=file`, dan `QUEUE_CONNECTION=sync`.
 - [ ] Pastikan cookie session secure, HTTP-only, dan encrypted.
-- [ ] Pastikan `TRUSTED_PROXIES` kosong atau berisi proxy yang benar-benar dipercaya.
-- [ ] Pastikan tidak ada wildcard proxy `*`.
+- [ ] Isi `TRUSTED_PROXIES` hanya dengan proxy yang benar-benar dipercaya.
 - [ ] Pastikan `.env` berizin `0600` dan tidak dapat diakses dari web.
 
 ## Pemeriksaan produksi
 
-- [ ] Jalankan `php artisan sistem:periksa-produksi`.
 - [ ] Jalankan `php artisan optimize`.
 - [ ] Jalankan `php artisan sistem:periksa-produksi --ketat`.
-- [ ] Pastikan seluruh pemeriksaan berstatus BERHASIL.
-- [ ] Uji `--json` dan pastikan format valid.
-- [ ] Matikan koneksi database uji sementara dan pastikan command gagal.
-- [ ] Ubah `APP_DEBUG=true` pada environment uji dan pastikan pemeriksaan konfigurasi gagal.
-- [ ] Ubah `APP_URL` menjadi HTTP pada environment uji dan pastikan pemeriksaan gagal.
-- [ ] Pastikan storage dan bootstrap cache tidak writable pada environment uji lalu pastikan pemeriksaan gagal.
+- [ ] Pastikan seluruh pemeriksaan kritis berstatus BERHASIL.
+- [ ] Akses `/up` dan `/kesiapan` melalui HTTPS.
+- [ ] Pastikan `/kesiapan` tidak memuat database, kredensial, path, atau exception internal.
 
-## Endpoint kesehatan
+## Backup dan restore
 
-- [ ] Akses `/up` dan pastikan HTTP 200.
-- [ ] Akses `/kesiapan` dan pastikan HTTP 200 saat infrastruktur sehat.
-- [ ] Pastikan response `/kesiapan` memiliki `Cache-Control: no-store`.
-- [ ] Pastikan response tidak memuat nama database.
-- [ ] Pastikan response tidak memuat username atau password database.
-- [ ] Pastikan response tidak memuat path server.
-- [ ] Pastikan response tidak memuat exception internal.
-- [ ] Putuskan database uji dan pastikan `/kesiapan` mengembalikan HTTP 503.
-- [ ] Pastikan rate limit endpoint bekerja.
-
-## Backup database
-
-- [ ] Jalankan mode simulasi backup.
 - [ ] Jalankan backup nyata ke direktori privat.
-- [ ] Pastikan berkas `.sql.gz` terbentuk.
-- [ ] Pastikan berkas `.sha256` terbentuk.
-- [ ] Jalankan `gzip -t` dan pastikan berhasil.
-- [ ] Jalankan `sha256sum -c` dan pastikan cocok.
-- [ ] Pastikan permission backup `0600`.
-- [ ] Pastikan kata sandi database tidak terlihat pada daftar proses.
-- [ ] Uji retensi dengan berkas backup lama.
-- [ ] Uji direktori tidak writable dan pastikan command gagal aman.
-- [ ] Uji ketika `mysqldump` tidak tersedia dan pastikan pesan jelas.
-- [ ] Pastikan backup disalin ke media/lokasi di luar server utama.
-
-## Restore database
-
-- [ ] Jalankan mode simulasi restore dengan backup valid.
-- [ ] Uji konfirmasi selain `RESTORE` dan pastikan ditolak.
-- [ ] Uji restore saat aplikasi aktif dan pastikan ditolak.
-- [ ] Aktifkan maintenance mode.
-- [ ] Restore backup ke database uji terpisah.
-- [ ] Pastikan backup keselamatan dibuat sebelum restore nyata.
-- [ ] Pastikan checksum salah menyebabkan restore ditolak.
-- [ ] Pastikan `.sql` biasa dapat dipulihkan.
-- [ ] Pastikan `.sql.gz` dapat dipulihkan.
+- [ ] Verifikasi `.sql.gz`, `.sha256`, `gzip -t`, dan `sha256sum -c`.
+- [ ] Salin backup ke media atau lokasi di luar server utama.
+- [ ] Uji restore pada database staging terpisah.
 - [ ] Pastikan hasil restore memiliki 71 base table dan 3 view.
-- [ ] Jalankan `skema:verifikasi --rinci` pada database hasil restore.
-- [ ] Periksa stok, penjualan, hutang, piutang, kas, jurnal, dan lampiran pada database uji.
-- [ ] Pastikan aplikasi kembali aktif setelah prosedur selesai.
+- [ ] Jalankan `php artisan skema:verifikasi --rinci` pada hasil restore.
+- [ ] Pastikan restore produksi hanya dilakukan dengan keputusan dan maintenance mode.
 
-## Deployment dry-run
+## Deployment staging
 
-- [ ] Jalankan `bash -n scripts/deploy-production.sh`.
-- [ ] Jalankan `DEPLOY_DRY_RUN=1`.
-- [ ] Pastikan repository kotor ditolak.
-- [ ] Pastikan `.env` shared yang hilang menyebabkan penolakan.
-- [ ] Pastikan program wajib yang hilang menyebabkan penolakan.
-- [ ] Pastikan dua deployment bersamaan ditolak oleh `flock`.
-
-## Deployment release nyata pada staging
-
-- [ ] Siapkan struktur `releases`, `shared`, dan `current`.
-- [ ] Pastikan `.env` dan storage berada pada `shared`.
-- [ ] Jalankan deployment staging.
-- [ ] Pastikan release dibuat dari commit yang benar.
-- [ ] Pastikan `current` menunjuk release baru.
-- [ ] Pastikan storage tetap sama antarrelease.
+- [ ] Sesuaikan konfigurasi Nginx, PHP-FPM, domain, sertifikat, dan socket.
+- [ ] Jalankan `nginx -t` dan `php-fpm8.4 -t`.
+- [ ] Jalankan deployment staging menggunakan struktur `releases`, `shared`, dan `current`.
 - [ ] Pastikan backup dibuat sebelum migration.
-- [ ] Pastikan migration dan pemeriksaan ketat berhasil.
-- [ ] Pastikan aplikasi maintenance selama pergantian.
-- [ ] Pastikan aplikasi aktif kembali setelah sukses.
-- [ ] Pastikan release lama dibersihkan sesuai `RELEASE_KEEP`.
-- [ ] Simulasikan kegagalan sebelum symlink dan pastikan release lama aktif kembali.
-- [ ] Pastikan deployment tidak pernah dijalankan otomatis oleh repository.
-
-## Rollback aplikasi
-
-- [ ] Jalankan `bash -n scripts/rollback-production.sh`.
-- [ ] Jalankan mode dry-run.
-- [ ] Uji release target tidak ditemukan dan pastikan ditolak.
-- [ ] Uji target di luar direktori releases dan pastikan ditolak.
-- [ ] Jalankan rollback staging ke release sebelumnya.
-- [ ] Pastikan backup keselamatan dibuat.
 - [ ] Pastikan symlink `current` berpindah atomik.
-- [ ] Pastikan aplikasi aktif kembali.
-- [ ] Simulasikan kegagalan rollback dan pastikan current dikembalikan.
-- [ ] Pastikan database tidak di-rollback otomatis.
+- [ ] Uji login, transaksi, lampiran, laporan, ekspor, dan cetak nota.
+- [ ] Uji rollback ke release sebelumnya.
+- [ ] Pastikan rollback aplikasi tidak melakukan rollback database otomatis.
 
-## Nginx dan PHP-FPM
+## Backup terjadwal
 
-- [ ] Sesuaikan domain dan sertifikat pada konfigurasi Nginx.
-- [ ] Jalankan `nginx -t`.
-- [ ] Sesuaikan path PHP 8.4 dan socket.
-- [ ] Jalankan `php-fpm8.4 -t`.
-- [ ] Pastikan root Nginx menunjuk `current/public`.
-- [ ] Pastikan `.env`, Git, composer, artisan, dan log tidak dapat diakses dari web.
-- [ ] Pastikan HTTP dialihkan ke HTTPS.
-- [ ] Pastikan batas upload sesuai kebutuhan lampiran.
-- [ ] Pastikan header keamanan tampil.
-- [ ] Uji static asset UBold dan Nunito lokal.
-- [ ] Uji login, session, upload, download, cetak nota, dan laporan.
+- [ ] Pasang service dan timer systemd.
+- [ ] Jalankan `systemctl daemon-reload` dan aktifkan timer.
+- [ ] Jalankan service secara manual dan periksa journal.
+- [ ] Pastikan retensi serta salinan off-server bekerja.
 
-## Systemd backup timer
+## Bukti otomatis yang sudah berhasil
 
-- [ ] Salin service dan timer ke `/etc/systemd/system`.
-- [ ] Jalankan `systemctl daemon-reload`.
-- [ ] Aktifkan timer.
-- [ ] Pastikan jadwal terlihat pada `systemctl list-timers`.
-- [ ] Jalankan service secara manual.
-- [ ] Periksa journal dan exit code.
-- [ ] Pastikan backup tersimpan pada direktori privat.
-- [ ] Pastikan user `www-data` dapat menulis backup dan storage.
-
-## Regresi aplikasi
-
-- [ ] Jalankan test Fase 10.
-- [ ] Jalankan regression Fase 9.
-- [ ] Jalankan regression Fase 2 sampai Fase 8.
-- [ ] Jalankan full regression suite.
-- [ ] Pastikan dashboard dan laporan tetap benar.
-- [ ] Pastikan lampiran privat tetap dapat diakses sesuai permission.
-- [ ] Pastikan seluruh modul transaksi tidak berubah perilakunya.
-- [ ] Pastikan total permission tetap 98.
-- [ ] Pastikan tidak ada tabel baru.
-- [ ] Pastikan auto-merge tidak digunakan.
+- [x] Sintaks Bash deployment dan rollback.
+- [x] Dry-run deployment dan rollback.
+- [x] Sintaks PHP dan Laravel Pint.
+- [x] Migration SQL paten pada MySQL 8.4.
+- [x] Verifikasi 71 base table, 3 view, dan 98 permission.
+- [x] Integration test Fase 10.
+- [x] Endpoint readiness tanpa kebocoran data sensitif.
+- [x] Backup `.sql.gz` nyata dan checksum SHA-256.
+- [x] Restore ke database kedua.
+- [x] Verifikasi skema hasil restore.
+- [x] Pemeriksaan produksi mode ketat.
+- [x] Regresi fase sebelumnya dan full suite.
+- [x] Audit larangan auto-merge.
 
 ## Gate akhir
 
-Fase 10 hanya boleh di-merge setelah seluruh CI hijau, checklist ini diterima, dan pemilik menyatakan eksplisit:
-
-```text
-Fase 10 lulus
-```
+- [x] Seluruh CI pada checkpoint teknis hijau.
+- [x] Checklist diterima pemilik.
+- [x] Pemilik menyatakan eksplisit `Fase 10 lulus`.
+- [ ] PR #13 digabung manual dengan expected head SHA terkunci.
