@@ -15,7 +15,7 @@ class PemeriksaPascadeploy
         $hasil = [];
         $this->tambahkan($hasil, 'versi', trim((string) @file_get_contents(base_path('VERSION'))) === 'v1.0.0');
         $this->tambahkan($hasil, 'maintenance_mode', ! app()->isDownForMaintenance());
-        $this->tambahkan($hasil, 'route_login', Route::has('login'));
+        $this->tambahkan($hasil, 'route_masuk', Route::has('masuk'));
         $this->tambahkan($hasil, 'route_dashboard', Route::has('dashboard'));
         $this->tambahkan($hasil, 'route_panduan', Route::has('panduan.index'));
         $this->tambahkan($hasil, 'route_kesiapan', Route::has('kesiapan-produksi'));
