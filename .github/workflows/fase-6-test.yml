@@ -117,27 +117,10 @@ jobs:
       - name: Verify schema against final SQL
         run: php artisan skema:verifikasi --rinci
 
-      - name: Capture Phase 6 integration test diagnostics
-        id: fase6
-        continue-on-error: true
+      - name: Run Phase 6 integration tests
         env:
           FASE6_INTEGRATION: true
-        run: |
-          set -o pipefail
-          php artisan test --filter=FaseEnamPenjualanTest 2>&1 | tee diagnostik-fase-6.txt
-
-      - name: Upload Phase 6 integration diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnostik-fase-6
-          path: diagnostik-fase-6.txt
-          retention-days: 2
-          if-no-files-found: error
-
-      - name: Fail when Phase 6 integration tests fail
-        if: steps.fase6.outcome == 'failure'
-        run: exit 1
+        run: php artisan test --filter=FaseEnamPenjualanTest
 
       - name: Run Phase 5 regression tests
         env:
