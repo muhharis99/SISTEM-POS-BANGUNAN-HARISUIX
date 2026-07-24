@@ -9,7 +9,7 @@ class PemeriksaGoLive
 {
     public function __construct(
         private readonly PemeriksaKesiapanProduksi $pemeriksaProduksi,
-        private readonly PembuatPaketRilisFinal $pembuatPaket,
+        private readonly PengelolaPaketRilisFinal $pembuatPaket,
         private readonly KontrakRilisFinal $kontrakRilis
     ) {}
 
