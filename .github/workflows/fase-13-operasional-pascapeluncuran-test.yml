@@ -129,10 +129,27 @@ jobs:
           FASE13_INTEGRATION: true
         run: php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
 
-      - name: Run Phase 13 finalization tests
+      - name: Capture Phase 13 finalization test diagnostics
+        id: finalisasi
+        continue-on-error: true
         env:
           FASE13_INTEGRATION: true
-        run: php artisan test --filter=FaseTigaBelasFinalisasiKekuranganTest
+        run: |
+          set -o pipefail
+          php artisan test --filter=FaseTigaBelasFinalisasiKekuranganTest 2>&1 | tee diagnostik-finalisasi-fase-13.txt
+
+      - name: Upload Phase 13 finalization diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostik-finalisasi-fase-13
+          path: diagnostik-finalisasi-fase-13.txt
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: Fail when Phase 13 finalization tests fail
+        if: steps.finalisasi.outcome == 'failure'
+        run: exit 1
 
       - name: Run Phase 12 regression
         env:
