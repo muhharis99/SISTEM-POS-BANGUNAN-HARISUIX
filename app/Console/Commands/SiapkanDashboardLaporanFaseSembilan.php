@@ -11,16 +11,12 @@ class SiapkanDashboardLaporanFaseSembilan extends Command
 {
     protected $signature = 'fase9:siapkan';
 
-    protected $description = 'Menyiapkan permission dashboard, laporan, ekspor, dan cetak Fase 9 tanpa mengubah skema paten';
+    protected $description = 'Menyiapkan permission dashboard, ekspor, dan cetak Fase 9 tanpa mengubah skema paten';
 
     public function handle(): int
     {
         $hakAkses = [
             ['DASHBOARD_BISNIS_LIHAT', 'Melihat ringkasan bisnis pada dashboard', 'LAPORAN'],
-            ['LAPORAN_PENJUALAN_LIHAT', 'Melihat laporan penjualan', 'LAPORAN'],
-            ['LAPORAN_PEMBELIAN_LIHAT', 'Melihat laporan pembelian', 'LAPORAN'],
-            ['LAPORAN_PERSEDIAAN_LIHAT', 'Melihat laporan persediaan', 'LAPORAN'],
-            ['LAPORAN_HUTANG_PIUTANG_LIHAT', 'Melihat laporan hutang dan piutang', 'LAPORAN'],
             ['LAPORAN_OPERASIONAL_UNDUH', 'Mengunduh laporan operasional', 'LAPORAN'],
             ['NOTA_PENJUALAN_CETAK', 'Mencetak nota penjualan', 'PENJUALAN'],
         ];
@@ -45,18 +41,11 @@ class SiapkanDashboardLaporanFaseSembilan extends Command
             $matriks = [
                 'ADMINISTRATOR' => $semua,
                 'PEMILIK' => $semua,
-                'KEUANGAN' => [
-                    'DASHBOARD_BISNIS_LIHAT',
-                    'LAPORAN_PENJUALAN_LIHAT',
-                    'LAPORAN_PEMBELIAN_LIHAT',
-                    'LAPORAN_PERSEDIAAN_LIHAT',
-                    'LAPORAN_HUTANG_PIUTANG_LIHAT',
-                    'LAPORAN_OPERASIONAL_UNDUH',
-                ],
-                'KASIR' => ['DASHBOARD_BISNIS_LIHAT', 'LAPORAN_PENJUALAN_LIHAT', 'NOTA_PENJUALAN_CETAK'],
-                'GUDANG' => ['DASHBOARD_BISNIS_LIHAT', 'LAPORAN_PERSEDIAAN_LIHAT'],
-                'PEMBELIAN' => ['DASHBOARD_BISNIS_LIHAT', 'LAPORAN_PEMBELIAN_LIHAT', 'LAPORAN_HUTANG_PIUTANG_LIHAT'],
-                'PENJUALAN' => ['DASHBOARD_BISNIS_LIHAT', 'LAPORAN_PENJUALAN_LIHAT', 'LAPORAN_HUTANG_PIUTANG_LIHAT', 'NOTA_PENJUALAN_CETAK'],
+                'KEUANGAN' => ['DASHBOARD_BISNIS_LIHAT', 'LAPORAN_OPERASIONAL_UNDUH'],
+                'KASIR' => ['DASHBOARD_BISNIS_LIHAT', 'NOTA_PENJUALAN_CETAK'],
+                'GUDANG' => ['DASHBOARD_BISNIS_LIHAT'],
+                'PEMBELIAN' => ['DASHBOARD_BISNIS_LIHAT'],
+                'PENJUALAN' => ['DASHBOARD_BISNIS_LIHAT', 'NOTA_PENJUALAN_CETAK'],
             ];
 
             foreach ($matriks as $kodePeran => $daftarKode) {
