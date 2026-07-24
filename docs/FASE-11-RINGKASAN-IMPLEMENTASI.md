@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS SEDANG DIKERJAKAN — BELUM LULUS.**
+**IMPLEMENTASI TEKNIS SELESAI DAN SELURUH CI OTOMATIS HIJAU — BELUM LULUS MENURUT KEPUTUSAN PEMILIK.**
 
 - Branch: `fase-11-uat-release-candidate-serah-terima`
 - Pull request: Draft PR #14
@@ -40,7 +40,7 @@ Topik yang tersedia meliputi:
 - pengguna, peran, dan hak akses;
 - dukungan serta pelaporan masalah.
 
-Halaman menggunakan layout UBold, aset lokal, pencarian sisi klien, dan tautan menuju modul yang tersedia.
+Halaman menggunakan layout UBold, aset lokal, pencarian sisi klien, dan tautan menuju modul yang tersedia. Route telah diverifikasi tetap tersedia setelah Laravel route cache dibuat.
 
 ## Manifest release candidate
 
@@ -60,15 +60,9 @@ Manifest memuat:
 - checksum SHA-256 berkas kritis;
 - pernyataan batasan keamanan.
 
-Manifest tidak memuat kredensial, isi `.env`, path absolut, atau data transaksi. Nama berkas dibatasi dan hasil disimpan privat pada `storage/app/release-candidate`.
+Manifest tidak memuat kredensial, isi `.env`, path absolut, atau data transaksi. Nama berkas dibatasi dan hasil disimpan privat pada `storage/app/release-candidate` dengan permission privat.
 
-Verifikator membandingkan:
-
-- format manifest;
-- kondisi skema saat ini;
-- jumlah permission;
-- jumlah tabel terlarang;
-- checksum berkas kritis.
+Verifikator membandingkan format, kondisi skema, jumlah permission, tabel terlarang, dan checksum berkas kritis. Perubahan checksum menyebabkan verifikasi gagal.
 
 ## Dokumentasi kandidat rilis
 
@@ -80,24 +74,32 @@ Verifikator membandingkan:
 - `docs/FASE-11-CHECKLIST-PENGUJIAN-MANUAL.md`;
 - `docs/FASE-11-STATUS.md`.
 
-## Pengujian otomatis
+Dokumentasi tersebut mencakup panduan operasional per modul, skenario UAT lintas peran, kriteria temuan, pelatihan, dukungan, eskalasi, persiapan go-live, dan pembagian tanggung jawab serah-terima.
 
-Workflow Fase 11 dirancang untuk:
+## Hasil pengujian otomatis
 
-- memeriksa sintaks PHP dan Laravel Pint;
-- menjalankan migration SQL paten pada MySQL 8.4;
-- memastikan 71 base table, 3 view, dan 98 permission;
-- menjalankan regression Fase 9 serta Fase 10;
-- menguji autentikasi dan cabang aktif pada Pusat Bantuan;
-- menguji filter panduan berdasarkan permission;
-- membuat manifest kandidat rilis;
-- memverifikasi manifest dan checksum;
-- memastikan manifest tidak memuat rahasia;
-- mengunggah manifest sebagai artifact terbatas;
-- menjalankan regression fase sebelumnya dan full suite.
+Seluruh 16 workflow pada commit teknis `98af6398d94733c2fe0c77e992bf70ead9b13cc6` berhasil menjalankan:
+
+- sintaks PHP dan Laravel Pint;
+- migration SQL paten pada MySQL 8.4;
+- verifikasi 71 base table, 3 view, dan 98 permission;
+- verifikasi tidak adanya tabel infrastruktur Laravel yang dilarang;
+- regression Fase 9 dan Fase 10;
+- autentikasi serta cabang aktif pada Pusat Bantuan;
+- filter panduan berdasarkan permission;
+- route cache Pusat Bantuan;
+- pembuatan manifest kandidat rilis;
+- verifikasi manifest, commit, kondisi skema, dan checksum;
+- pemeriksaan bahwa manifest tidak memuat rahasia;
+- unggah manifest sebagai artifact terbatas;
+- regression fase sebelumnya dan full suite;
+- verifikasi UBold/Nunito lokal dan visual font;
+- audit larangan auto-merge.
 
 ## Gate
 
-Fase 11 tetap belum lulus. Draft PR #14 harus tetap draft dan tidak boleh di-merge sampai implementasi selesai, seluruh CI hijau, checklist UAT diterima, dan pemilik menyatakan eksplisit `Fase 11 lulus`.
+Fase 11 tetap belum lulus. Draft PR #14 harus tetap draft dan tidak boleh di-merge sampai checklist UAT diterima serta pemilik menyatakan eksplisit `Fase 11 lulus`.
+
+Pengujian otomatis tidak dianggap sebagai bukti bahwa UAT manusia, pelatihan, serah-terima, atau deployment staging/produksi nyata telah dilakukan.
 
 Tag atau GitHub Release final memerlukan keputusan terpisah setelah merge Fase 11.
