@@ -6,9 +6,26 @@ Format mengikuti prinsip Keep a Changelog dan penomoran versi Semantic Versionin
 
 ## [Unreleased]
 
-### Dalam pengembangan
+Belum ada perubahan setelah target rilis final `v1.0.0`.
 
-- Fase 11: UAT, release candidate, pusat bantuan, panduan pengguna, dan serah-terima operasional.
+## [1.0.0] - 2026-07-24
+
+### Ditambahkan
+
+- Paket rilis final dari commit Git aktif, manifest, inventaris berkas, release notes, dan checksum SHA-256.
+- Command pembuat serta verifikator paket final.
+- Gate go-live yang memeriksa konfigurasi produksi, versi, skema, permission, maintenance mode, disk, backup, dan paket.
+- Smoke test pascadeploy untuk route, database, skema, storage, `/up`, dan `/kesiapan`.
+- Skrip pascadeploy dan pemeriksaan hypercare dengan lock serta output JSON privat.
+- Contoh systemd service/timer pemeriksaan hypercare setiap 15 menit.
+- Runbook go-live, observability, respons insiden, hypercare, pemeliharaan, dan release notes final.
+
+### Diperkuat
+
+- Paket final menolak `.env`, backup database, log runtime, private key, vendor, node_modules, storage runtime, dan data transaksi.
+- Checksum paket luar, checksum komponen, checksum berkas kritis, inventaris, dan isi arsip diverifikasi.
+- Backup terbaru diverifikasi berdasarkan usia, checksum, dan keterbacaan gzip sebelum go-live.
+- Tag dan GitHub Release final dipisahkan dari implementasi teknis dan hanya dibuat setelah Fase 12 lulus.
 
 ## [1.0.0-rc1] - 2026-07-24
 
@@ -24,7 +41,7 @@ Format mengikuti prinsip Keep a Changelog dan penomoran versi Semantic Versionin
 - Lampiran privat dan audit aktivitas terstruktur.
 - Dashboard bisnis, laporan operasional, ekspor CSV, dan nota penjualan 80 mm.
 - Pemeriksaan kesiapan produksi, readiness endpoint, backup/restore, deployment atomik, rollback, dan contoh konfigurasi server.
-- Pusat bantuan berbasis hak akses dan command manifest release candidate.
+- Pusat bantuan berbasis hak akses, panduan pengguna, matriks UAT, serta command manifest release candidate.
 
 ### Keamanan
 
