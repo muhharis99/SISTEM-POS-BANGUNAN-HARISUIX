@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Laporan\FilterLaporanRequest;
 use App\Services\AuditAktivitas;
 use App\Services\LayananLaporanOperasional;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -14,10 +13,10 @@ class LaporanController extends Controller
     private const IZIN_JENIS = [
         'penjualan' => 'LAPORAN_PENJUALAN_LIHAT',
         'pembelian' => 'LAPORAN_PEMBELIAN_LIHAT',
-        'persediaan' => 'LAPORAN_PERSEDIAAN_LIHAT',
-        'hutang' => 'LAPORAN_HUTANG_PIUTANG_LIHAT',
-        'piutang' => 'LAPORAN_HUTANG_PIUTANG_LIHAT',
-        'kas' => 'KEUANGAN_LIHAT',
+        'persediaan' => 'LAPORAN_STOK_LIHAT',
+        'hutang' => 'HUTANG_PEMASOK_LIHAT',
+        'piutang' => 'LAPORAN_PIUTANG_LIHAT',
+        'kas' => 'LAPORAN_KAS_BANK_LIHAT',
     ];
 
     private const JUDUL_JENIS = [
@@ -33,7 +32,7 @@ class LaporanController extends Controller
         FilterLaporanRequest $request,
         LayananLaporanOperasional $layanan,
         AuditAktivitas $audit
-    ): View|RedirectResponse {
+    ): View {
         $data = $request->validated();
         $jenis = $data['jenis_laporan'];
         $idCabang = (int) $request->session()->get('id_cabang_aktif');
