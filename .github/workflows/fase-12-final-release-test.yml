@@ -151,7 +151,18 @@ jobs:
         env:
           FASE12_INTEGRATION: true
           RELEASE_COMMIT: ${{ github.sha }}
-        run: php artisan test --filter=FaseDuaBelasFinalReleaseTest
+        run: |
+          set -o pipefail
+          php artisan test --filter=FaseDuaBelasFinalReleaseTest 2>&1 | tee fase12-integration.log
+
+      - name: Upload Phase 12 integration diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostik-integration-fase-12
+          path: fase12-integration.log
+          retention-days: 2
+          if-no-files-found: error
 
       - name: Create real database backup
         run: php artisan sistem:backup-database --direktori=storage/app/private/backups/database --retensi-hari=14 --json
