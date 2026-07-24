@@ -476,6 +476,7 @@ class PengelolaPaketRilisFinal
                 if ($nama !== '.gitignore') {
                     return true;
                 }
+
                 continue;
             }
             if (preg_match('#^(vendor|node_modules|\.git)/#', $path)) {
