@@ -57,15 +57,14 @@ jobs:
           sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
           sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
 
-      - name: Validate issue form YAML
-        run: |
-          ruby -e "require 'yaml'; ARGV.each { |path| YAML.safe_load(File.read(path), permitted_classes: [], aliases: true); puts \"Valid: #{path}\" }" \
-            .github/ISSUE_TEMPLATE/config.yml \
-            .github/ISSUE_TEMPLATE/laporan-bug-insiden.yml \
-            .github/ISSUE_TEMPLATE/permintaan-perubahan.yml
+      - name: Validate issue forms and support configuration
+        run: ruby scripts/verifikasi-issue-form.rb
 
-      - name: Verify Phase 13 documentation
+      - name: Verify Phase 13 documentation and governance
         run: |
+          test -s SECURITY.md
+          test -s SUPPORT.md
+          test -s .github/pull_request_template.md
           test -s docs/FASE-13-STATUS.md
           test -s docs/FASE-13-RINGKASAN-IMPLEMENTASI.md
           test -s docs/FASE-13-CHECKLIST-PENGUJIAN-MANUAL.md
@@ -75,6 +74,11 @@ jobs:
           grep -q 'Auto-merge' docs/FASE-13-STATUS.md
           grep -q '71 base table' docs/FASE-13-STATUS.md
           grep -q '98 permission' docs/FASE-13-STATUS.md
+          grep -q 'Report a vulnerability' SECURITY.md
+          grep -q 'Expected head SHA' .github/pull_request_template.md
+
+      - name: Check Ruby syntax
+        run: ruby -c scripts/verifikasi-issue-form.rb
 
       - name: Check PHP syntax and formatting
         run: |
@@ -113,6 +117,11 @@ jobs:
           test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "98"
           test "$(cat VERSION)" = "v1.0.0"
           php artisan skema:verifikasi --rinci
+
+      - name: Run Phase 13 sales hardening tests
+        env:
+          FASE13_INTEGRATION: true
+        run: php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
 
       - name: Run Phase 12 regression
         env:
