@@ -100,7 +100,10 @@ class FaseDuaBelasFinalReleaseTest extends TestCase
         $hasilPaket = app(PengelolaPaketRilisFinal::class)->buat('v1.0.0', $this->direktoriUji.'/rilis');
 
         $smoke = app(PemeriksaPascadeploy::class)->periksa();
-        $this->assertTrue($smoke['berhasil']);
+        $this->assertTrue(
+            $smoke['berhasil'],
+            (string) json_encode($smoke, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        );
         $this->assertNotContains('GAGAL', array_column($smoke['pemeriksaan'], 'status'));
 
         $goLive = app(PemeriksaGoLive::class)->periksa(
@@ -109,7 +112,10 @@ class FaseDuaBelasFinalReleaseTest extends TestCase
             $hasilPaket['paket']
         );
 
-        $this->assertTrue($goLive['siap']);
+        $this->assertTrue(
+            $goLive['siap'],
+            (string) json_encode($goLive, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        );
         $this->assertSame('v1.0.0', $goLive['kontrak']['aktual']['versi']);
         $this->assertSame(basename($backup), $goLive['backup_terbaru']['nama']);
         $this->assertNotContains('GAGAL', array_column($goLive['pemeriksaan'], 'status'));
