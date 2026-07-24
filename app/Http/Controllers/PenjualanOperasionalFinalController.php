@@ -12,12 +12,18 @@ use Illuminate\Validation\ValidationException;
 
 class PenjualanOperasionalFinalController extends PenjualanFinalController
 {
+    private const JENIS_MUTASI_SKEMA = 'LAINNYA';
+
+    private const DOKUMEN_PENGGANTI_KELUAR = 'PENGGANTI_RETUR_KELUAR';
+
+    private const DOKUMEN_PENGGANTI_BATAL = 'PENGGANTI_RETUR_BATAL';
+
     public function berangkatkanPengiriman(Request $request, int $id, AuditAktivitas $audit): RedirectResponse
     {
         $idCabang = $this->idCabangOperasional($request);
-        $pengirimanPengganti = $this->pengirimanPengganti($idCabang, $id);
+        $pengirimanAwal = $this->pengirimanPengganti($idCabang, $id);
 
-        if (! $pengirimanPengganti) {
+        if (! $pengirimanAwal) {
             return parent::berangkatkanPengiriman($request, $id, $audit);
         }
 
@@ -85,6 +91,18 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
                 }
 
                 $barang = $layanan->barangSatuan((int) $item->id_barang_satuan);
+                $sudahDicatat = DB::table('mutasi_stok')
+                    ->where('jenis_mutasi', self::JENIS_MUTASI_SKEMA)
+                    ->where('jenis_dokumen', self::DOKUMEN_PENGGANTI_KELUAR)
+                    ->where('id_dokumen', $id)
+                    ->where('id_barang', $barang->id_barang)
+                    ->where('id_lokasi_gudang', $detailJual->id_lokasi_gudang)
+                    ->exists();
+
+                if ($sudahDicatat) {
+                    continue;
+                }
+
                 $hpp = (float) DB::table('saldo_stok')
                     ->where('id_gudang', $penjualan->id_gudang)
                     ->where('id_lokasi_gudang', $detailJual->id_lokasi_gudang)
@@ -99,8 +117,8 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
                     0,
                     $jumlahDasar,
                     $hpp,
-                    'PENGGANTI_RETUR_KELUAR',
-                    'PENGIRIMAN',
+                    self::JENIS_MUTASI_SKEMA,
+                    self::DOKUMEN_PENGGANTI_KELUAR,
                     $id,
                     $pengiriman->nomor_pengiriman,
                     'Barang pengganti retur pelanggan',
@@ -116,7 +134,14 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
             ]);
         });
 
-        $audit->catat($request, 'PENJUALAN', 'UBAH', 'pengiriman', $id, 'Memberangkatkan barang pengganti retur dan mengurangi stok secara atomik.');
+        $audit->catat(
+            $request,
+            'PENJUALAN',
+            'UBAH',
+            'pengiriman',
+            $id,
+            'Memberangkatkan barang pengganti retur dan mengurangi stok secara atomik menggunakan jenis mutasi yang sesuai skema paten.'
+        );
 
         return back()->with('berhasil', 'Barang pengganti sedang dalam perjalanan dan stok telah diperbarui.');
     }
@@ -124,9 +149,9 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
     public function gagalPengiriman(Request $request, int $id, AuditAktivitas $audit): RedirectResponse
     {
         $idCabang = $this->idCabangOperasional($request);
-        $pengirimanPengganti = $this->pengirimanPengganti($idCabang, $id);
+        $pengirimanAwal = $this->pengirimanPengganti($idCabang, $id);
 
-        if (! $pengirimanPengganti) {
+        if (! $pengirimanAwal) {
             return parent::gagalPengiriman($request, $id, $audit);
         }
 
@@ -153,7 +178,7 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
 
                 if (! $penjualan) {
                     throw ValidationException::withMessages([
-                        'id_penjualan' => 'Penjualan sumber pengiriman pengganti tidak ditemukan.',
+                        'id_penjualan' => 'Penjualan sumber pengiriman pengganti tidak ditemukan pada cabang aktif.',
                     ]);
                 }
 
@@ -184,12 +209,32 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
                     }
 
                     $barang = $layanan->barangSatuan((int) $item->id_barang_satuan);
-                    $hpp = (float) DB::table('mutasi_stok')
-                        ->where('jenis_mutasi', 'PENGGANTI_RETUR_KELUAR')
+                    $sudahDipulihkan = DB::table('mutasi_stok')
+                        ->where('jenis_mutasi', self::JENIS_MUTASI_SKEMA)
+                        ->where('jenis_dokumen', self::DOKUMEN_PENGGANTI_BATAL)
                         ->where('id_dokumen', $id)
                         ->where('id_barang', $barang->id_barang)
+                        ->where('id_lokasi_gudang', $detailJual->id_lokasi_gudang)
+                        ->exists();
+
+                    if ($sudahDipulihkan) {
+                        continue;
+                    }
+
+                    $mutasiKeluar = DB::table('mutasi_stok')
+                        ->where('jenis_mutasi', self::JENIS_MUTASI_SKEMA)
+                        ->where('jenis_dokumen', self::DOKUMEN_PENGGANTI_KELUAR)
+                        ->where('id_dokumen', $id)
+                        ->where('id_barang', $barang->id_barang)
+                        ->where('id_lokasi_gudang', $detailJual->id_lokasi_gudang)
                         ->orderByDesc('id_mutasi_stok')
-                        ->value('harga_pokok');
+                        ->first();
+
+                    if (! $mutasiKeluar) {
+                        throw ValidationException::withMessages([
+                            'status_pengiriman' => 'Mutasi stok keluar barang pengganti tidak ditemukan sehingga stok belum dapat dipulihkan.',
+                        ]);
+                    }
 
                     $persediaan->catatMutasi(
                         $idCabang,
@@ -198,12 +243,12 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
                         (int) $barang->id_barang,
                         (float) $item->jumlah_dasar_dikirim,
                         0,
-                        $hpp,
-                        'PENGGANTI_RETUR_BATAL',
-                        'PENGIRIMAN',
+                        (float) $mutasiKeluar->harga_pokok,
+                        self::JENIS_MUTASI_SKEMA,
+                        self::DOKUMEN_PENGGANTI_BATAL,
                         $id,
                         $pengiriman->nomor_pengiriman,
-                        'Pengembalian stok karena pengiriman pengganti gagal',
+                        'Pengembalian stok karena pengiriman barang pengganti gagal',
                         (int) $request->user()->id_pengguna
                     );
                 }
@@ -216,7 +261,14 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
             ]);
         });
 
-        $audit->catat($request, 'PENJUALAN', 'UBAH', 'pengiriman', $id, 'Menandai pengiriman pengganti gagal dan mengembalikan stok bila sebelumnya sudah diberangkatkan.');
+        $audit->catat(
+            $request,
+            'PENJUALAN',
+            'UBAH',
+            'pengiriman',
+            $id,
+            'Menandai pengiriman pengganti gagal dan memulihkan stok secara idempoten bila barang sudah diberangkatkan.'
+        );
 
         return back()->with('berhasil', 'Pengiriman pengganti ditandai gagal. Stok telah dipulihkan bila sebelumnya sudah keluar.');
     }
@@ -245,6 +297,7 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
     private function idCabangOperasional(Request $request): int
     {
         $idCabang = (int) $request->session()->get('id_cabang_aktif');
+
         if ($idCabang <= 0) {
             abort(403, 'Cabang aktif belum dipilih.');
         }
