@@ -1,292 +1,306 @@
 # Sistem POS Toko Bangunan HARISUIX
 
-Sistem informasi terintegrasi untuk mendukung operasional toko bangunan, mencakup penjualan/POS, persediaan, pembelian, gudang, pengiriman, hutang, piutang, kas, bank, akuntansi, serta pengaturan pengguna dan hak akses.
+Sistem informasi POS dan operasional toko bangunan berbasis Laravel untuk mengintegrasikan penjualan, pembelian, persediaan, pengiriman, hutang, piutang, kas, bank, akuntansi, laporan, lampiran, dan audit aktivitas dalam satu aplikasi multi-cabang.
 
-> Status proyek: **dalam tahap perancangan dan pengembangan fondasi**. Repositori saat ini berisi blueprint alur sistem dan ERD, struktur database MySQL/MariaDB, serta template antarmuka admin statis. Backend aplikasi belum tersedia secara lengkap.
+## Status proyek
 
-## Tujuan
-
-- Mengintegrasikan transaksi kasir, stok, pembelian, dan keuangan.
-- Mempercepat pencarian barang dan pelayanan pelanggan.
-- Memantau stok per cabang, gudang, dan lokasi penyimpanan.
-- Mengelola transaksi tunai, transfer, QRIS, kartu, dan tempo.
-- Mengontrol hutang pemasok serta piutang pelanggan.
-- Menyediakan log aktivitas untuk kebutuhan audit.
-
-## Status Pengembangan
-
-| Komponen | Status |
-|---|---|
-| Blueprint alur sistem | Tersedia |
-| ERD | Tersedia dalam dokumen blueprint |
-| Struktur database | Tersedia |
-| Data awal/master | Tersedia |
-| Template admin | Tersedia |
-| Backend aplikasi | Belum tersedia |
-| Integrasi database | Belum tersedia |
-| Pengujian dan deployment | Belum dilakukan |
-
-## Modul Sistem
-
-### Pengguna dan Hak Akses
-
-- Cabang dan pegawai.
-- Akun pengguna.
-- Peran dan hak akses.
-- Hak akses berdasarkan cabang.
-- Pengaturan aplikasi.
-- Penomoran dokumen otomatis.
-
-### Master Barang
-
-- Kategori dan merek.
-- Satuan dasar dan konversi satuan.
-- Barcode per satuan barang.
-- Harga beli dan harga jual.
-- Ukuran, warna, berat, dan spesifikasi.
-- Stok minimum dan maksimum.
-- Dukungan lot dan tanggal kedaluwarsa.
-- Metode persediaan rata-rata dan FIFO.
-
-### Pelanggan dan Pemasok
-
-- Pelanggan umum, tukang, kontraktor, dan pengecer.
-- Alamat pelanggan dan alamat pengiriman.
-- Batas piutang dan jatuh tempo.
-- Data pemasok dan kontak pemasok.
-
-### Persediaan dan Gudang
-
-- Banyak gudang dalam satu cabang.
-- Lokasi atau rak penyimpanan bertingkat.
-- Saldo stok dan stok tersedia.
-- Mutasi dan kartu stok.
-- Transfer antargudang.
-- Stok opname.
-- Penyesuaian stok.
-
-### Pembelian
-
-- Permintaan pembelian.
-- Pesanan pembelian.
-- Penerimaan barang.
-- Faktur dan retur pembelian.
-- Hutang pemasok dan pembayaran hutang.
-
-### POS dan Penjualan
-
-- Penawaran penjualan.
-- Pesanan pelanggan.
-- Transaksi kasir/POS.
-- Penjualan tunai dan tempo.
-- Pembayaran multi-metode.
-- Potongan harga dan pajak.
-- Retur penjualan.
-- Piutang dan pembayaran piutang.
-
-### Pengiriman
-
-- Alamat pengiriman.
-- Jadwal pengiriman.
-- Kendaraan dan pengemudi.
-- Status pengiriman.
-- Biaya pengiriman.
-
-### Kas, Bank, dan Akuntansi
-
-- Kas masuk dan kas keluar.
-- Rekening kas dan bank.
-- Mutasi kas/bank.
-- Daftar akun keuangan.
-- Jurnal umum dan detail jurnal.
-
-### Audit
-
-- Lampiran dokumen transaksi.
-- Log aktivitas pengguna.
-- Data sebelum dan sesudah perubahan.
-- Alamat IP dan informasi peramban.
-
-## Peran Bawaan
-
-| Peran | Keterangan |
-|---|---|
-| Administrator | Akses penuh seluruh modul |
-| Pemilik | Pemantauan usaha, laporan, dan persetujuan |
-| Kasir | Transaksi penjualan dan pembayaran |
-| Petugas Gudang | Persediaan, transfer, dan stok opname |
-| Petugas Pembelian | Permintaan, pesanan, dan faktur pembelian |
-| Petugas Penjualan | Penawaran, pesanan, dan pelanggan |
-| Petugas Keuangan | Kas, bank, hutang, piutang, dan jurnal |
-
-## Metode Pembayaran Bawaan
-
-- Tunai
-- Transfer bank
-- QRIS
-- Kartu debit
-- Kartu kredit
-- Pembayaran tempo
-
-## Struktur Repositori
-
-```text
-SISTEM-POS-BANGUNAN-HARISUIX/
-├── blueprint_alur_sistem_erd_toko_bangunan_wiryo_pojok.pdf
-├── struktur_database_toko_bangunan.sql
-├── template_admin/
-└── README.md
-```
-
-| Berkas/Folder | Fungsi |
-|---|---|
-| `blueprint_alur_sistem_erd_toko_bangunan_wiryo_pojok.pdf` | Alur proses dan ERD sistem |
-| `struktur_database_toko_bangunan.sql` | Struktur database, relasi, data awal, index, dan view |
-| `template_admin/` | Referensi antarmuka admin berbasis HTML, CSS, JavaScript, dan Bootstrap 5 |
-
-## Database
-
-Database menggunakan nama:
-
-```sql
-sistem_informasi_toko_bangunan
-```
-
-Karakteristik database:
-
-- MySQL atau MariaDB.
-- Engine InnoDB.
-- Character set utf8mb4.
-- Relasi foreign key.
-- Index untuk pencarian dan relasi.
-- Soft delete dengan `deleted_at` dan `deleted_by`.
-- Audit dengan `created_at`, `created_by`, `updated_at`, dan `updated_by`.
-- View ringkasan stok, hutang, dan piutang.
-
-Kelompok utama struktur database:
-
-1. Cabang, pegawai, pengguna, dan hak akses.
-2. Master barang, pelanggan, pemasok, gudang, dan kas.
-3. Daftar harga.
-4. Persediaan dan mutasi stok.
-5. Pembelian dan hutang pemasok.
-6. Penjualan, piutang, dan pengiriman.
-7. Kas, bank, dan akuntansi.
-8. Lampiran dan log aktivitas.
+- **Fase 1 sampai Fase 9:** lulus dan sudah digabung ke `main`.
+- **Fase 10:** kesiapan produksi, deployment, backup, restore, dan rollback sedang melalui gate akhir pada Draft PR terpisah.
+- Auto-merge dilarang dan tidak digunakan.
+- Deployment ke server produksi tidak dijalankan otomatis oleh repository.
 
 ## Teknologi
 
-Komponen yang sudah tersedia:
-
-- MySQL/MariaDB
-- HTML5
-- CSS3
-- JavaScript
+- Laravel 13
+- PHP 8.4
+- MySQL 8 atau MariaDB yang kompatibel
 - Bootstrap 5
-- Template admin UBold
-- DataTables dan komponen pendukung antarmuka
+- Template admin UBold lokal
+- Font Nunito lokal
+- Laravel Query Builder dan Eloquent sesuai kebutuhan modul
+- PHPUnit/Laravel Test
+- GitHub Actions
+- Nginx dan PHP-FPM untuk contoh produksi
 
-Framework backend belum ditentukan atau belum disertakan dalam repositori.
+Aplikasi tidak memakai Tailwind, Livewire, atau Inertia.
 
-## Instalasi Fondasi Proyek
+## Modul yang tersedia
 
-### Clone repositori
+### Fondasi dan keamanan
+
+- autentikasi dan manajemen sesi;
+- pengguna, pegawai, peran, dan hak akses;
+- pembatasan data berdasarkan cabang aktif;
+- pengaturan aplikasi dan penomoran dokumen atomik;
+- soft delete dan audit field;
+- validasi hak akses pada backend.
+
+### Master data
+
+- barang, kategori, merek, satuan, dan konversi satuan;
+- barcode dan daftar harga;
+- pelanggan dan jenis pelanggan;
+- pemasok;
+- gudang dan lokasi gudang;
+- kas/bank, metode pembayaran, kategori biaya, pajak, dan armada.
+
+### Persediaan
+
+- saldo stok dan stok tersedia;
+- kartu serta mutasi stok;
+- stok awal;
+- transfer stok;
+- stok opname;
+- penyesuaian stok;
+- dukungan nomor lot dan tanggal kedaluwarsa.
+
+### Pembelian dan hutang
+
+- permintaan pembelian;
+- pesanan pembelian;
+- penerimaan barang;
+- faktur pembelian tunai/tempo;
+- hutang pemasok dan alokasi pembayaran;
+- retur pembelian;
+- integrasi stok dan jurnal.
+
+### Penjualan dan piutang
+
+- penawaran penjualan;
+- pesanan pelanggan;
+- transaksi penjualan tunai/tempo;
+- pemeriksaan stok dan batas kredit;
+- piutang pelanggan dan alokasi pembayaran;
+- pengiriman;
+- retur penjualan;
+- harga pokok dan laba kotor;
+- nota penjualan 80 mm.
+
+### Kas, bank, dan akuntansi
+
+- kas masuk, kas keluar, dan pemindahan kas/bank;
+- daftar akun keuangan;
+- pemetaan akun;
+- jurnal umum seimbang;
+- posting dan pembatalan jurnal.
+
+### Lampiran dan audit
+
+- lampiran transaksi disimpan privat;
+- unduh melalui route terotorisasi;
+- soft delete lampiran tanpa langsung menghapus berkas fisik;
+- log aktivitas pengguna;
+- data sebelum/sesudah dengan penyamaran nilai sensitif;
+- ekspor audit CSV.
+
+### Dashboard dan laporan
+
+- KPI penjualan, pembelian, laba kotor, kas/bank, hutang, piutang, dan stok menipis;
+- tren penjualan dan barang terlaris;
+- laporan penjualan, pembelian, persediaan, hutang, piutang, serta kas/bank;
+- filter periode dan pencarian;
+- ekspor CSV streaming;
+- isolasi cabang pada dashboard, laporan, ekspor, dan nota.
+
+## Jaminan skema paten
+
+Struktur bisnis berasal dari `struktur_database_toko_bangunan.sql` dan tidak boleh diubah tanpa keputusan pemilik.
+
+Target skema:
+
+- 71 base table, termasuk tabel `migrations` Laravel;
+- 3 view:
+  - `tampilan_stok_tersedia`;
+  - `tampilan_hutang_pemasok`;
+  - `tampilan_piutang_pelanggan`;
+- 98 permission aktif setelah Fase 9;
+- tidak menggunakan tabel infrastruktur Laravel berikut:
+  - `sessions`;
+  - `cache`;
+  - `jobs`;
+  - `job_batches`;
+  - `failed_jobs`;
+  - `password_reset_tokens`.
+
+Karena itu konfigurasi bawaan menggunakan session dan cache berbasis file serta queue `sync`.
+
+## Instalasi pengembangan
+
+### Persyaratan
+
+- PHP 8.4;
+- Composer 2;
+- MySQL 8/MariaDB;
+- extension `mbstring`, `dom`, `fileinfo`, dan `pdo_mysql`.
+
+### Langkah instalasi
 
 ```bash
 git clone https://github.com/muhharis99/SISTEM-POS-BANGUNAN-HARISUIX.git
 cd SISTEM-POS-BANGUNAN-HARISUIX
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-### Import database
+Atur koneksi database pada `.env`, lalu jalankan:
 
 ```bash
-mysql -u root -p < struktur_database_toko_bangunan.sql
+php artisan migrate
+php scripts/salin-aset-template.php
 ```
 
-Database juga dapat diimpor melalui DBeaver, phpMyAdmin, HeidiSQL, atau aplikasi pengelola database lainnya.
+Siapkan administrator awal:
 
-### Membuka template admin
+```bash
+php artisan fase2:siapkan \
+  --nama-pengguna=administrator \
+  --kata-sandi='GantiDenganKataSandiKuat' \
+  --nama-tampilan='Administrator'
+```
 
-Buka:
+Siapkan permission dan data pendukung fase berikutnya:
+
+```bash
+php artisan fase3:siapkan
+php artisan fase4:siapkan
+php artisan fase5:siapkan
+php artisan fase6:siapkan
+php artisan fase7:siapkan
+php artisan fase8:siapkan
+php artisan fase9:siapkan
+```
+
+Jalankan aplikasi:
+
+```bash
+php artisan serve
+```
+
+## Pengujian
+
+Pemeriksaan format dan test umum:
+
+```bash
+vendor/bin/pint --test
+php artisan test
+```
+
+Verifikasi skema paten:
+
+```bash
+php artisan skema:verifikasi --rinci
+```
+
+Integration test setiap fase dijalankan melalui workflow MySQL khusus dengan environment flag masing-masing. Workflow fase terbaru juga menjalankan regresi fase sebelumnya dan full test suite.
+
+## Kesiapan produksi — Fase 10
+
+### Pemeriksaan produksi
+
+```bash
+php artisan sistem:periksa-produksi
+php artisan sistem:periksa-produksi --ketat
+php artisan sistem:periksa-produksi --json
+```
+
+Endpoint:
 
 ```text
-template_admin/index.html
+/up
+/kesiapan
 ```
 
-Template tersebut masih statis dan belum terhubung dengan database.
+`/kesiapan` hanya memberikan status umum dan tidak menampilkan nama database, kredensial, path server, atau exception internal.
 
-## Alur Utama
+### Backup database
 
-### Penjualan
+```bash
+php artisan sistem:backup-database \
+  --direktori=/var/backups/sistem-pos-bangunan/database \
+  --retensi-hari=14
+```
+
+Backup dibuat sebagai `.sql.gz` dengan checksum SHA-256. Kredensial MySQL disimpan pada berkas sementara berizin `0600`, bukan pada argumen proses.
+
+### Restore database
+
+```bash
+php artisan down --retry=60
+php artisan sistem:restore-database /lokasi/backup.sql.gz --konfirmasi=RESTORE
+```
+
+Restore membuat backup keselamatan secara default dan memverifikasi skema paten setelah proses selesai.
+
+### Deployment dan rollback
+
+```bash
+APP_ROOT=/var/www/sistem-pos-bangunan \
+SOURCE_DIR="$PWD" \
+bash scripts/deploy-production.sh
+```
+
+```bash
+APP_ROOT=/var/www/sistem-pos-bangunan \
+bash scripts/rollback-production.sh <id-release>
+```
+
+Deployment memakai direktori release dan symlink `current` agar pergantian versi atomik. Rollback aplikasi tidak melakukan rollback database otomatis.
+
+Dokumentasi lengkap:
+
+- `docs/DEPLOYMENT-PRODUKSI.md`;
+- `docs/BACKUP-RESTORE-DATABASE.md`;
+- `docs/FASE-10-CHECKLIST-PENGUJIAN-MANUAL.md`.
+
+Contoh konfigurasi server:
+
+- `deploy/nginx/sistem-pos-bangunan.conf`;
+- `deploy/php-fpm/sistem-pos-bangunan.conf`;
+- `deploy/systemd/sistem-pos-backup.service`;
+- `deploy/systemd/sistem-pos-backup.timer`.
+
+## Struktur penting repository
 
 ```text
-Pelanggan
-→ Penawaran
-→ Pesanan Penjualan
-→ Transaksi POS
-→ Pembayaran Tunai/Piutang
-→ Pengurangan Stok
-→ Pengiriman
-→ Jurnal dan Laporan
+app/
+├── Console/Commands/
+├── Http/Controllers/
+├── Http/Middleware/
+├── Http/Requests/
+├── Models/
+└── Services/
+
+deploy/
+├── nginx/
+├── php-fpm/
+└── systemd/
+
+docs/
+routes/
+scripts/
+tests/Feature/
+template_admin/
+struktur_database_toko_bangunan.sql
+blueprint_alur_sistem_erd_toko_bangunan_wiryo_pojok.pdf
 ```
 
-### Pembelian
+## Prinsip implementasi
 
-```text
-Permintaan Pembelian
-→ Pesanan Pembelian
-→ Penerimaan Barang
-→ Penambahan Stok
-→ Faktur Pembelian
-→ Pembayaran/Hutang
-→ Jurnal dan Laporan
-```
-
-### Persediaan
-
-```text
-Saldo Awal
-→ Penerimaan/Penjualan/Retur/Transfer
-→ Mutasi dan Kartu Stok
-→ Stok Opname
-→ Penyesuaian
-→ Saldo Stok Tersedia
-```
-
-## Rencana Pengembangan
-
-- [ ] Menentukan framework backend.
-- [ ] Membuat autentikasi dan manajemen sesi.
-- [ ] Mengimplementasikan hak akses.
-- [ ] Mengintegrasikan template admin.
-- [ ] Membuat modul master barang dan barcode.
-- [ ] Membuat modul pelanggan dan pemasok.
-- [ ] Membuat modul pembelian dan gudang.
-- [ ] Membuat halaman kasir/POS.
-- [ ] Membuat modul pengiriman.
-- [ ] Membuat modul hutang dan piutang.
-- [ ] Membuat modul kas, bank, dan jurnal.
-- [ ] Membuat laporan dan pencetakan nota.
-- [ ] Menambahkan pengujian dan deployment.
-
-## Catatan Implementasi
-
-- Kata sandi wajib disimpan dalam bentuk hash yang aman.
-- Transaksi stok dan keuangan harus menggunakan transaksi database.
-- Setiap perubahan stok harus menghasilkan catatan mutasi.
-- Hak akses wajib divalidasi pada backend.
-- Nomor dokumen harus dibuat secara atomik agar tidak ganda.
-- Transaksi tempo harus memeriksa batas kredit pelanggan.
-- Backup database harus dilakukan secara berkala.
+- seluruh transaksi stok dan keuangan menggunakan transaksi database;
+- operasi kritis memakai locking untuk mencegah race condition;
+- nomor dokumen dibuat atomik;
+- setiap perubahan stok menghasilkan mutasi;
+- transaksi cabang lain tidak boleh dapat diakses melalui manipulasi ID;
+- data sensitif pada audit disamarkan;
+- lampiran tidak disimpan pada direktori publik;
+- kredensial produksi tidak boleh masuk repository;
+- backup wajib diverifikasi dan disalin ke lokasi di luar server utama;
+- auto-merge tidak digunakan.
 
 ## Pengembang
 
 **Muhammad Haris Chaidir**  
 Web Developer & UI/UX Designer — HARISUIX
-
-- GitHub: [muhharis99](https://github.com/muhharis99)
-- Website: [harisuix.com](https://harisuix.com)
-
----
 
 Dibuat untuk mendukung digitalisasi dan integrasi operasional toko bangunan.
