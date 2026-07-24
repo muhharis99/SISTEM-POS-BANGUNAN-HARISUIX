@@ -119,9 +119,26 @@ jobs:
           php artisan skema:verifikasi --rinci
 
       - name: Run Phase 13 sales hardening tests
+        id: hardening
+        continue-on-error: true
         env:
           FASE13_INTEGRATION: true
-        run: php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
+        run: php artisan test --filter=FaseTigaBelasHardeningPenjualanTest > hardening-fase-13.log 2>&1
+
+      - name: Upload Phase 13 hardening diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostik-hardening-fase-13
+          path: hardening-fase-13.log
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: Fail when Phase 13 hardening tests fail
+        if: steps.hardening.outcome == 'failure'
+        run: |
+          tail -n 250 hardening-fase-13.log
+          exit 1
 
       - name: Run Phase 12 regression
         env:
