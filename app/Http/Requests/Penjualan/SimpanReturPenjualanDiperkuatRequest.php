@@ -20,7 +20,7 @@ class SimpanReturPenjualanDiperkuatRequest extends FormRequest
             'id_gudang' => ['required', 'integer'],
             'tanggal_retur' => ['required', 'date'],
             'alasan_retur' => ['required', 'string'],
-            'cara_pengembalian_dana' => ['required', Rule::in(['POTONG_PIUTANG', 'TUNAI', 'TRANSFER'])],
+            'cara_pengembalian_dana' => ['required', Rule::in(['POTONG_PIUTANG', 'TUNAI', 'TRANSFER', 'PENGGANTI_BARANG'])],
             'id_kas_bank' => [
                 Rule::requiredIf(fn (): bool => in_array($this->input('cara_pengembalian_dana'), ['TUNAI', 'TRANSFER'], true)),
                 'nullable',
@@ -61,7 +61,6 @@ class SimpanReturPenjualanDiperkuatRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'cara_pengembalian_dana.in' => 'Metode pengganti barang belum didukung karena belum memiliki alur pengiriman pengganti yang dapat diaudit.',
             'id_kas_bank.required' => 'Kas atau bank wajib dipilih untuk pengembalian dana tunai atau transfer.',
             'detail.*.id_penjualan_detail.distinct' => 'Detail penjualan yang sama tidak boleh diretur dua kali dalam satu dokumen.',
         ];
