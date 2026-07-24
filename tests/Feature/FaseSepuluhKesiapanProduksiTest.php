@@ -55,11 +55,15 @@ class FaseSepuluhKesiapanProduksiTest extends TestCase
     {
         $respons = $this->get('/kesiapan')
             ->assertOk()
-            ->assertHeader('cache-control', 'no-store, no-cache, must-revalidate, private')
             ->assertJsonPath('status', 'siap')
             ->assertJsonPath('komponen.database', 'berhasil')
             ->assertJsonPath('komponen.skema_tabel', 'berhasil')
             ->assertJsonPath('komponen.skema_view', 'berhasil');
+
+        $cacheControl = (string) $respons->headers->get('cache-control');
+        foreach (['no-store', 'no-cache', 'must-revalidate', 'private'] as $direktif) {
+            $this->assertStringContainsString($direktif, $cacheControl);
+        }
 
         $isi = $respons->getContent();
         $this->assertStringNotContainsString((string) config('database.connections.mysql.database'), $isi);
