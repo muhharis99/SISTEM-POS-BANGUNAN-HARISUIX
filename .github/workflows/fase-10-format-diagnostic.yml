@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fase-10-kesiapan-produksi-deployment
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
