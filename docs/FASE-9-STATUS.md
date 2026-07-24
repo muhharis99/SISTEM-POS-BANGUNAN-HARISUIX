@@ -3,11 +3,11 @@
 ## Checkpoint
 
 - Fase 1 sampai Fase 8: lulus dan sudah digabung ke `main`.
-- Fase 9: **implementasi teknis selesai dan seluruh CI otomatis hijau; belum lulus menurut keputusan pemilik**.
+- Fase 9: **LULUS — DITERIMA PEMILIK pada 24 Juli 2026**.
 - Branch: `fase-9-dashboard-laporan-cetak`.
-- Pull request: Draft PR #12.
+- Pull request: PR #12 diproses menuju ready-for-review dan merge manual.
 - Auto-merge: dilarang dan tidak digunakan.
-- Fase 10 belum dimulai.
+- Fase 10: boleh dimulai setelah Fase 9 berhasil digabung ke `main`.
 
 ## Cakupan SQL paten
 
@@ -19,7 +19,7 @@ Fase 9 tidak menambahkan tabel baru. Implementasi hanya membaca tabel transaksi 
 
 Tidak ada tabel, kolom, index, foreign key, migration bisnis, maupun view yang ditambahkan atau diubah.
 
-## Implementasi yang selesai
+## Implementasi yang diterima
 
 - 3 permission baru Fase 9 dan matriks peran; total 98 permission aktif;
 - pemanfaatan permission laporan yang sudah tersedia sejak Fase 4 sampai Fase 7 tanpa duplikasi;
@@ -52,12 +52,15 @@ Tidak ada tabel, kolom, index, foreign key, migration bisnis, maupun view yang d
 - Full regression suite berhasil.
 - UBold/Nunito lokal dan visual test berhasil.
 - Audit larangan auto-merge berhasil.
-- Seluruh 14 workflow hijau pada commit teknis `6ba1e09e74a9afd72230b07cd0882d89d9f7bf50`.
+- Seluruh 14 workflow hijau pada checkpoint sebelum keputusan kelulusan.
 
-## Gate
+## Keputusan pemilik
 
-- Draft PR #12 tetap draft dan belum di-merge.
-- Checklist manual belum dinyatakan diterima oleh pemilik.
-- Fase 9 hanya boleh dinyatakan lulus setelah pemilik menyatakan eksplisit `Fase 9 lulus`.
-- Auto-merge dilarang dan tidak digunakan.
-- Fase 10 tidak boleh dimulai tanpa instruksi terpisah.
+Pemilik menyatakan eksplisit `Fase 9 lulus` pada 24 Juli 2026. Checklist manual diterima sebagai keputusan pemilik. Catatan penerimaan ini tidak mengklaim bahwa agen menjalankan sendiri seluruh pengujian melalui browser atau perangkat cetak fisik.
+
+## Gate lanjutan
+
+- PR #12 boleh ditandai ready-for-review setelah workflow pada head final hijau.
+- Merge wajib dilakukan manual dengan expected head SHA terkunci.
+- Auto-merge tidak boleh digunakan.
+- Fase 10 hanya dimulai setelah merge Fase 9 berhasil dan melalui branch serta Draft PR terpisah.
