@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Insiden keamanan atau data sensitif
+    url: https://github.com/muhharis99/SISTEM-POS-BANGUNAN-HARISUIX/security
+    about: Jangan menaruh kredensial, token, backup, data transaksi lengkap, atau bukti sensitif pada issue publik.
