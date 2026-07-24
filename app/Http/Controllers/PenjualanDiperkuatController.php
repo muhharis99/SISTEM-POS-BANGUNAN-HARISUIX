@@ -192,7 +192,6 @@ class PenjualanDiperkuatController extends PenjualanController
                 $piutang = DB::table('piutang_pelanggan')
                     ->where('id_cabang', $idCabang)
                     ->where('id_penjualan', $penjualan->id_penjualan)
-                    ->whereNull('deleted_at')
                     ->lockForUpdate()
                     ->first();
 
@@ -297,7 +296,6 @@ class PenjualanDiperkuatController extends PenjualanController
                 $piutang = DB::table('piutang_pelanggan')
                     ->where('id_cabang', $idCabang)
                     ->where('id_penjualan', $retur->id_penjualan)
-                    ->whereNull('deleted_at')
                     ->lockForUpdate()
                     ->first();
 
