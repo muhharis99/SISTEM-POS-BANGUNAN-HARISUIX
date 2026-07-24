@@ -1,0 +1,213 @@
+name: Fase 10 Kesiapan Produksi Test
+
+on:
+  push:
+    branches:
+      - fase-10-kesiapan-produksi-deployment
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-fase-10:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sistem_informasi_toko_bangunan
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, zlib
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Validate deployment and rollback dry-run
+        run: |
+          bash -n scripts/deploy-production.sh
+          bash -n scripts/rollback-production.sh
+
+          DEPLOY_ROOT="$RUNNER_TEMP/deploy-root"
+          mkdir -p "$DEPLOY_ROOT/shared"
+          cp .env.production.example "$DEPLOY_ROOT/shared/.env"
+          APP_ROOT="$DEPLOY_ROOT" SOURCE_DIR="$GITHUB_WORKSPACE" DEPLOY_DRY_RUN=1 bash scripts/deploy-production.sh
+
+          ROLLBACK_ROOT="$RUNNER_TEMP/rollback-root"
+          mkdir -p "$ROLLBACK_ROOT/releases/r1" "$ROLLBACK_ROOT/releases/r2" "$ROLLBACK_ROOT/shared"
+          touch "$ROLLBACK_ROOT/releases/r1/artisan" "$ROLLBACK_ROOT/releases/r2/artisan"
+          ln -s "$ROLLBACK_ROOT/releases/r1" "$ROLLBACK_ROOT/current"
+          APP_ROOT="$ROLLBACK_ROOT" ROLLBACK_DRY_RUN=1 bash scripts/rollback-production.sh r2
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php scripts/salin-aset-template.php
+          sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=sistem_informasi_toko_bangunan/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+
+      - name: Check PHP syntax
+        run: find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Backup empty development database before migration
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --databases sistem_informasi_toko_bangunan > backup-sebelum-migrasi-fase-10.sql
+
+      - name: Run patent schema migration
+        run: php artisan migrate --force
+
+      - name: Add explicit branch data
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan <<'SQL'
+          INSERT INTO cabang (kode_cabang, nama_cabang, alamat, status_aktif)
+          VALUES ('CAB-UJI', 'Cabang Pengujian', 'Alamat Pengujian', 1);
+          SQL
+
+      - name: Prepare administrator fixtures
+        run: |
+          php artisan fase2:siapkan --nama-pengguna=admin_fase2 --kata-sandi='AdminFase2!2026' --nama-tampilan='Administrator Fase 2'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase3 --kata-sandi='AdminFase3!2026' --nama-tampilan='Administrator Fase 3'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase4 --kata-sandi='AdminFase4!2026' --nama-tampilan='Administrator Fase 4'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase5 --kata-sandi='AdminFase5!2026' --nama-tampilan='Administrator Fase 5'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase6 --kata-sandi='AdminFase6!2026' --nama-tampilan='Administrator Fase 6'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase7 --kata-sandi='AdminFase7!2026' --nama-tampilan='Administrator Fase 7'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase8 --kata-sandi='AdminFase8!2026' --nama-tampilan='Administrator Fase 8'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase9 --kata-sandi='AdminFase9!2026' --nama-tampilan='Administrator Fase 9'
+          php artisan fase2:siapkan --nama-pengguna=admin_fase10 --kata-sandi='AdminFase10!2026' --nama-tampilan='Administrator Fase 10'
+
+      - name: Prepare Phase 3 through Phase 9 data and access
+        run: |
+          php artisan fase3:siapkan
+          php artisan fase4:siapkan
+          php artisan fase5:siapkan
+          php artisan fase6:siapkan
+          php artisan fase7:siapkan
+          php artisan fase8:siapkan
+          php artisan fase9:siapkan
+
+      - name: Run Phase 9 regression before Phase 10 checks
+        env:
+          FASE9_INTEGRATION: true
+        run: php artisan test --filter=FaseSembilanLaporanTest
+
+      - name: Backup baseline before Phase 10 tests
+        run: mysqldump --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot --single-transaction sistem_informasi_toko_bangunan > backup-sebelum-testing-fase-10.sql
+
+      - name: Upload pre-change backups
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-sebelum-testing-fase-10
+          path: |
+            backup-sebelum-migrasi-fase-10.sql
+            backup-sebelum-testing-fase-10.sql
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Assert patent schema and unchanged access
+        run: |
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='BASE TABLE';")" = "71"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_TYPE='VIEW';")" = "3"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan' AND TABLE_NAME IN ('sessions','cache','jobs','job_batches','failed_jobs','password_reset_tokens');")" = "0"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot sistem_informasi_toko_bangunan -e "SELECT COUNT(*) FROM hak_akses WHERE deleted_at IS NULL;")" = "98"
+
+      - name: Verify schema, route, and commands
+        run: |
+          php artisan skema:verifikasi --rinci
+          php artisan route:list --name=kesiapan-produksi
+          php artisan list | grep 'sistem:periksa-produksi'
+          php artisan list | grep 'sistem:backup-database'
+          php artisan list | grep 'sistem:restore-database'
+
+      - name: Run Phase 10 integration tests
+        env:
+          FASE10_INTEGRATION: true
+        run: php artisan test --filter=FaseSepuluhKesiapanProduksiTest
+
+      - name: Create real compressed backup
+        run: |
+          mkdir -p "$RUNNER_TEMP/backups"
+          php artisan sistem:backup-database --direktori="$RUNNER_TEMP/backups" --retensi-hari=14
+          BACKUP_FILE="$(find "$RUNNER_TEMP/backups" -maxdepth 1 -type f -name 'backup-*.sql.gz' | head -n 1)"
+          test -n "$BACKUP_FILE"
+          test -f "$BACKUP_FILE.sha256"
+          gzip -t "$BACKUP_FILE"
+          echo "BACKUP_FILE=$BACKUP_FILE" >> "$GITHUB_ENV"
+
+      - name: Restore backup into a second database
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE sistem_informasi_toko_bangunan_restore CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          DB_DATABASE=sistem_informasi_toko_bangunan_restore php artisan sistem:restore-database "$BACKUP_FILE" \
+            --konfirmasi=RESTORE \
+            --tanpa-backup-keselamatan \
+            --izinkan-aplikasi-aktif
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan_restore' AND TABLE_TYPE='BASE TABLE';")" = "71"
+          test "$(mysql --protocol=TCP -N -h 127.0.0.1 -P 3306 -u root -proot -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='sistem_informasi_toko_bangunan_restore' AND TABLE_TYPE='VIEW';")" = "3"
+
+      - name: Run production readiness in strict mode
+        env:
+          APP_ENV: production
+          APP_DEBUG: false
+          APP_URL: https://pos.example.test
+          SESSION_DRIVER: file
+          CACHE_STORE: file
+          QUEUE_CONNECTION: sync
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: sistem_informasi_toko_bangunan
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: |
+          php artisan optimize
+          php artisan sistem:periksa-produksi --ketat
+          php artisan optimize:clear
+
+      - name: Run Phase 5 regression tests
+        env:
+          FASE5_INTEGRATION: true
+        run: php artisan test --filter=FaseLimaPembelianTest
+
+      - name: Run Phase 4 regression tests
+        env:
+          FASE4_INTEGRATION: true
+        run: php artisan test --filter=FaseEmpatPersediaanTest
+
+      - name: Run Phase 3 regression tests
+        env:
+          FASE3_INTEGRATION: true
+        run: php artisan test --filter=FaseTigaMasterDataTest
+
+      - name: Run Phase 2 regression tests
+        env:
+          FASE2_INTEGRATION: true
+        run: php artisan test --filter=FaseDuaAutentikasiTest
+
+      - name: Run complete regression suite
+        run: php artisan test
