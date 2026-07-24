@@ -13,6 +13,13 @@ class SimpanReturPenjualanDiperkuatRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->exists('id_kas_bank')) {
+            $this->merge(['id_kas_bank' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
