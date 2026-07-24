@@ -164,7 +164,9 @@ jobs:
           PACKAGE="$(find storage/app/release-final -maxdepth 1 -type f -name '*.tar.gz' | head -n 1)"
           test -n "$PACKAGE"
           php artisan sistem:verifikasi-paket-rilis-final "$PACKAGE" --json
-          sha256sum -c "$PACKAGE.sha256"
+          PACKAGE_DIRECTORY="$(dirname "$PACKAGE")"
+          PACKAGE_NAME="$(basename "$PACKAGE")"
+          (cd "$PACKAGE_DIRECTORY" && sha256sum -c "$PACKAGE_NAME.sha256")
           tar -tzf "$PACKAGE" | grep '^manifest-rilis-final.json$'
           tar -tzf "$PACKAGE" | grep '^inventaris-berkas.json$'
           tar -tzf "$PACKAGE" | grep '^checksums.sha256$'
