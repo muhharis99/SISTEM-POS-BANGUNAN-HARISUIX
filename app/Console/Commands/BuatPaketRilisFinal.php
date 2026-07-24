@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\KontrakRilisFinal;
 use App\Services\PembuatPaketRilisFinal;
 use Illuminate\Console\Command;
 use Throwable;
@@ -15,9 +16,10 @@ class BuatPaketRilisFinal extends Command
 
     protected $description = 'Membuat paket rilis final, inventaris berkas, manifest, dan checksum SHA-256';
 
-    public function handle(PembuatPaketRilisFinal $pembuat): int
+    public function handle(PembuatPaketRilisFinal $pembuat, KontrakRilisFinal $kontrak): int
     {
         try {
+            $kontrak->pastikan();
             $hasil = $pembuat->buat(
                 (string) $this->argument('versi'),
                 $this->option('direktori') ? (string) $this->option('direktori') : null
