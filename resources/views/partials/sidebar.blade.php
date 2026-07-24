@@ -15,6 +15,13 @@
         $bolehPeran = $punya('PERAN_LIHAT');
         $bolehLampiran = $punya('LAMPIRAN_LIHAT');
         $bolehAudit = $punya('AUDIT_LIHAT');
+        $jenisLaporan = collect([
+            'penjualan' => 'LAPORAN_PENJUALAN_LIHAT',
+            'pembelian' => 'LAPORAN_PEMBELIAN_LIHAT',
+            'persediaan' => 'LAPORAN_PERSEDIAAN_LIHAT',
+            'hutang' => 'LAPORAN_HUTANG_PIUTANG_LIHAT',
+            'kas' => 'KEUANGAN_LIHAT',
+        ])->first(fn (string $izin): bool => $punya($izin));
         $menuMaster = [
             ['izin' => 'MASTER_BARANG_LIHAT', 'ikon' => 'package-search', 'nama' => 'Barang', 'route' => route('barang.index'), 'aktif' => request()->routeIs('barang.*')],
             ['izin' => 'MASTER_BARANG_LIHAT', 'ikon' => 'folders', 'nama' => 'Kategori Barang', 'route' => route('master.index', ['slug' => 'kategori-barang']), 'aktif' => request()->routeIs('master.*') && request()->route('slug') === 'kategori-barang'],
@@ -46,14 +53,14 @@
         ];
         $adaPembelian = collect($menuPembelian)->contains(fn (array $item): bool => $punya($item['izin']));
         $menuPenjualan = [
-            ['izin' => 'PENJUALAN_LIHAT', 'ikon' => 'shopping-cart', 'nama' => 'Penjualan', 'route' => route('penjualan.index'), 'aktif' => request()->routeIs('penjualan.*')],
+            ['izin' => 'PENJUALAN_LIHAT', 'ikon' => 'shopping-cart', 'nama' => 'Penjualan', 'route' => route('penjualan.index'), 'aktif' => request()->routeIs('penjualan.*') && ! request()->routeIs('penjualan.nota')],
             ['izin' => 'PIUTANG_PELANGGAN_LIHAT', 'ikon' => 'wallet-cards', 'nama' => 'Piutang Pelanggan', 'route' => route('piutang-pelanggan.index'), 'aktif' => request()->routeIs('piutang-pelanggan.*')],
         ];
         $adaPenjualan = collect($menuPenjualan)->contains(fn (array $item): bool => $punya($item['izin']));
         $menuKeuangan = [
             ['izin' => 'KEUANGAN_LIHAT', 'ikon' => 'chart-no-axes-combined', 'nama' => 'Kas & Akuntansi', 'route' => route('keuangan.index'), 'aktif' => request()->routeIs('keuangan.*')],
         ];
-        $adaKeuangan = collect($menuKeuangan)->contains(fn (array $item): bool => $punya($item['izin']));
+        $adaKeuangan = collect($menuKeuangan)->contains(fn (array $item): bool => $punya($item['izin'])) || $jenisLaporan !== null;
     @endphp
 
     <div data-simplebar>
@@ -90,10 +97,13 @@
             @endif
 
             @if ($adaKeuangan)
-                <li class="side-nav-title">Keuangan</li>
+                <li class="side-nav-title">Keuangan & laporan</li>
                 @foreach ($menuKeuangan as $item)
                     @if ($punya($item['izin']))<li class="side-nav-item"><a href="{{ $item['route'] }}" class="side-nav-link {{ $item['aktif'] ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="{{ $item['ikon'] }}"></i></span><span class="menu-text">{{ $item['nama'] }}</span></a></li>@endif
                 @endforeach
+                @if ($jenisLaporan !== null)
+                    <li class="side-nav-item"><a href="{{ route('laporan.index', ['jenis_laporan' => $jenisLaporan]) }}" class="side-nav-link {{ request()->routeIs('laporan.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="file-chart-column"></i></span><span class="menu-text">Laporan Operasional</span></a></li>
+                @endif
             @endif
 
             @if ($bolehPengguna || $bolehPeran)
