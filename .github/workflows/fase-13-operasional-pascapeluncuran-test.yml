@@ -124,12 +124,15 @@ jobs:
           test "$(cat VERSION)" = "v1.0.0"
           php artisan skema:verifikasi --rinci
 
-      - name: Run Phase 13 sales hardening tests
+      - name: Run Phase 13 original hardening tests
         env:
           FASE13_INTEGRATION: true
-        run: |
-          php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
-          php artisan test --filter=FaseTigaBelasFinalisasiKekuranganTest
+        run: php artisan test --filter=FaseTigaBelasHardeningPenjualanTest
+
+      - name: Run Phase 13 finalization tests
+        env:
+          FASE13_INTEGRATION: true
+        run: php artisan test --filter=FaseTigaBelasFinalisasiKekuranganTest
 
       - name: Run Phase 12 regression
         env:
