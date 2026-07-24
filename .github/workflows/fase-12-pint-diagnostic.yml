@@ -1,0 +1,32 @@
+name: Fase 12 Pint Diagnostic
+
+on:
+  push:
+    branches:
+      - fase-12-final-release-go-live-hypercare
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Apply Laravel Pint
+        run: |
+          vendor/bin/pint
+          git diff --binary > fase-12-pint.patch
+      - name: Upload formatting patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: fase-12-pint-patch
+          path: fase-12-pint.patch
+          retention-days: 2
+          if-no-files-found: error
