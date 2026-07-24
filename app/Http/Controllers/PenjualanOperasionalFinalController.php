@@ -275,23 +275,43 @@ class PenjualanOperasionalFinalController extends PenjualanFinalController
 
     private function pengirimanPengganti(int $idCabang, int $idPengiriman, bool $kunci = false): ?object
     {
-        $query = DB::table('pengiriman as p')
-            ->join('retur_penjualan as r', function ($join): void {
-                $join->on('r.id_cabang', '=', 'p.id_cabang')
-                    ->whereRaw("p.keterangan = CONCAT('[PENGGANTI_RETUR:', r.id_retur_penjualan, ']')");
-            })
-            ->where('p.id_pengiriman', $idPengiriman)
-            ->where('p.id_cabang', $idCabang)
-            ->where('r.cara_pengembalian_dana', 'PENGGANTI_BARANG')
-            ->whereNull('p.deleted_at')
-            ->whereNull('r.deleted_at')
-            ->select('p.*', 'r.id_retur_penjualan');
+        $queryPengiriman = DB::table('pengiriman')
+            ->where('id_pengiriman', $idPengiriman)
+            ->where('id_cabang', $idCabang)
+            ->whereNull('deleted_at');
 
         if ($kunci) {
-            $query->lockForUpdate();
+            $queryPengiriman->lockForUpdate();
         }
 
-        return $query->first();
+        $pengiriman = $queryPengiriman->first();
+        if (! $pengiriman) {
+            return null;
+        }
+
+        if (! preg_match('/^\[PENGGANTI_RETUR:(\d+)\]$/', trim((string) $pengiriman->keterangan), $cocok)) {
+            return null;
+        }
+
+        $idRetur = (int) $cocok[1];
+        $queryRetur = DB::table('retur_penjualan')
+            ->where('id_retur_penjualan', $idRetur)
+            ->where('id_cabang', $idCabang)
+            ->where('cara_pengembalian_dana', 'PENGGANTI_BARANG')
+            ->whereNull('deleted_at');
+
+        if ($kunci) {
+            $queryRetur->lockForUpdate();
+        }
+
+        $retur = $queryRetur->first();
+        if (! $retur) {
+            return null;
+        }
+
+        $pengiriman->id_retur_penjualan = $retur->id_retur_penjualan;
+
+        return $pengiriman;
     }
 
     private function idCabangOperasional(Request $request): int
