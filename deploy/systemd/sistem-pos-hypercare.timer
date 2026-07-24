@@ -1,0 +1,12 @@
+[Unit]
+Description=Jalankan pemeriksaan hypercare Sistem POS Bangunan setiap 15 menit
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+AccuracySec=1min
+Persistent=true
+Unit=sistem-pos-hypercare.service
+
+[Install]
+WantedBy=timers.target
