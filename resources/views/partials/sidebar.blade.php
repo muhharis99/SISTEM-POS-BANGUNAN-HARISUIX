@@ -18,9 +18,10 @@
         $jenisLaporan = match (true) {
             $punya('LAPORAN_PENJUALAN_LIHAT') => 'penjualan',
             $punya('LAPORAN_PEMBELIAN_LIHAT') => 'pembelian',
-            $punya('LAPORAN_PERSEDIAAN_LIHAT') => 'persediaan',
-            $punya('LAPORAN_HUTANG_PIUTANG_LIHAT') => 'hutang',
-            $punya('KEUANGAN_LIHAT') => 'kas',
+            $punya('LAPORAN_STOK_LIHAT') => 'persediaan',
+            $punya('HUTANG_PEMASOK_LIHAT') => 'hutang',
+            $punya('LAPORAN_PIUTANG_LIHAT') => 'piutang',
+            $punya('LAPORAN_KAS_BANK_LIHAT') => 'kas',
             default => null,
         };
         $menuMaster = [
