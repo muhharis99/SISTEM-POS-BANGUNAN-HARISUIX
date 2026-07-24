@@ -16,7 +16,7 @@ Setiap pekerjaan baru harus dibuat sebagai GitHub Issue menggunakan template yan
 - **Laporan Bug/Insiden** untuk perilaku salah, kegagalan proses, error, atau potensi kehilangan integritas data;
 - **Permintaan Perubahan** untuk penyempurnaan alur, laporan, tampilan, atau kebutuhan baru.
 
-Rahasia, `.env`, token, kata sandi, backup database, data pasien/pelanggan lengkap, atau tangkapan layar berisi data sensitif tidak boleh ditempel langsung pada issue.
+Rahasia, `.env`, token, kata sandi, backup database, data pelanggan/pemasok/pegawai lengkap, atau tangkapan layar berisi data sensitif tidak boleh ditempel langsung pada issue. Dugaan kerentanan mengikuti `SECURITY.md`, sedangkan kebutuhan dukungan umum mengikuti `SUPPORT.md`.
 
 ## Klasifikasi prioritas
 
@@ -63,14 +63,36 @@ Tindakan: evaluasi pada siklus perencanaan berikutnya.
 6. Setiap perubahan kode wajib melalui branch, Draft PR, test relevan, dan review gate.
 7. Tutup issue hanya setelah bukti verifikasi tersedia dan dampak operasional dicatat.
 
+## Evaluasi ulang modul berisiko tinggi
+
+Review pascapeluncuran tidak boleh hanya menunggu laporan pengguna. Modul yang memengaruhi stok, hutang, piutang, kas, bank, jurnal, hak akses, dan isolasi cabang harus ditinjau secara proaktif.
+
+Pemeriksaan minimum:
+
+- nilai uang tidak boleh hanya dipercaya dari input browser;
+- detail transaksi wajib terbukti berasal dari header dokumen yang dipilih;
+- foreign key pilihan harus aktif dan berada pada cabang yang sama bila relevan;
+- jumlah kumulatif tidak boleh melebihi sumber;
+- status dokumen harus dikunci sebelum transisi;
+- tindakan yang berdampak keuangan harus memiliki dokumen kas/jurnal yang dapat diverifikasi;
+- jalur yang belum lengkap harus ditolak dengan pesan jelas, bukan dibiarkan setengah berjalan.
+
+Hardening Fase 13 menerapkan prinsip tersebut pada retur dan pengiriman penjualan. Nilai retur kini berasal dari detail penjualan sumber, detail pengiriman harus konsisten dengan header, dan refund tunai/transfer memiliki gate transaksi kas/bank. Metode pengganti barang tetap ditolak sampai alurnya tersedia secara utuh.
+
 ## Aturan perubahan
 
 - SQL paten tidak boleh diubah tanpa keputusan pemilik dan fase khusus.
 - Perubahan stok, hutang, piutang, kas, jurnal, atau isolasi cabang wajib memiliki regression test.
 - Hotfix tidak boleh melewati Form Request, transaksi database, locking, audit, dan kontrol cabang yang relevan.
+- Perubahan nilai uang wajib menghitung ulang dari sumber tepercaya pada server.
+- Template PR repository wajib digunakan sebagai daftar pemeriksaan minimum.
 - Auto-merge tetap dilarang.
 - Deployment produksi tidak dijalankan otomatis oleh repository.
 - Rollback aplikasi tidak boleh otomatis melakukan rollback database.
+
+## Refund dan keputusan akuntansi
+
+Refund tunai/transfer dari retur penjualan harus membuat dokumen transaksi kas/bank dan tidak boleh menutup retur sebelum pengeluaran disetujui. Pemetaan akun jurnal refund harus ditinjau pihak akuntansi. Bila akun kontra-penjualan atau akun retur khusus belum disepakati, jangan mengklaim jurnal otomatis sudah merepresentasikan kebijakan akuntansi final.
 
 ## Bukti penutupan
 
@@ -96,4 +118,6 @@ Lakukan review operasional minimal bulanan terhadap:
 - performa query dan kapasitas disk;
 - perubahan hak akses;
 - temuan audit dan akses lintas cabang;
+- transaksi retur/refund yang belum selesai;
+- transaksi kas DRAF yang berasal dari retur;
 - kebutuhan maintenance release berikutnya.
