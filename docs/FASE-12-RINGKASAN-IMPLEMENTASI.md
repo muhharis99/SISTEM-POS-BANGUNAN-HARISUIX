@@ -2,16 +2,16 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS SELESAI DAN SELURUH CHECKPOINT OTOMATIS BERHASIL — BELUM LULUS MENURUT KEPUTUSAN PEMILIK.**
+**FASE 12 LULUS — DITERIMA PEMILIK PADA 24 JULI 2026.**
 
 - Branch: `fase-12-final-release-go-live-hypercare`
-- Pull request: Draft PR #15
+- Pull request: PR #15
 - Target: `main`
-- Target versi final: `v1.0.0`
+- Versi final: `v1.0.0`
 - Auto-merge: dilarang dan tidak digunakan
 - Deployment otomatis: tidak dilakukan
-- Tag/GitHub Release final: belum dibuat
-- Fase 13: belum dimulai
+- Keputusan pemilik: `Fase 12 lulus dan silahkan lanjut ke Fase selanjutnya`
+- Fase 13: diizinkan dimulai setelah merge Fase 12
 
 ## Batasan SQL paten
 
@@ -125,9 +125,9 @@ Contoh systemd service dan timer disediakan untuk pemeriksaan setiap 15 menit se
 - `docs/FASE-12-CHECKLIST-PENGUJIAN-MANUAL.md`;
 - `docs/FASE-12-STATUS.md`.
 
-## Hasil otomatis
+## Hasil otomatis yang diterima
 
-Seluruh 17 workflow pada head teknis `669a5c9d4b82d368874175d4868fbfa09dea9c7f` berhasil menjalankan:
+Seluruh 17 workflow pada head final `797cd0950e1288fe852d1c99d1638bbce738d603` berhasil menjalankan:
 
 - sintaks Bash, PHP, dan Laravel Pint;
 - migration serta verifikasi SQL paten MySQL 8.4;
@@ -143,6 +143,8 @@ Seluruh 17 workflow pada head teknis `669a5c9d4b82d368874175d4868fbfa09dea9c7f` 
 - regresi Fase 1 sampai Fase 11 dan full suite;
 - verifikasi aset lokal serta larangan auto-merge.
 
-## Gate
+## Keputusan akhir
 
-Fase 12 tetap belum lulus. Draft PR #15 tidak boleh di-merge dan tag/GitHub Release final tidak boleh dibuat sampai checklist go-live diterima serta pemilik menyatakan eksplisit `Fase 12 lulus`. Pengujian otomatis tidak dipresentasikan sebagai bukti bahwa deployment staging/produksi atau hypercare nyata telah dilakukan.
+Pemilik menerima hasil teknis dan menyatakan Fase 12 lulus pada 24 Juli 2026. PR #15 boleh diproses menuju ready-for-review dan merge manual setelah seluruh workflow pada head dokumentasi kelulusan berhasil. Tag `v1.0.0` dan GitHub Release final dibuat setelah merge.
+
+Penerimaan ini tidak dipresentasikan sebagai bukti bahwa agen menjalankan deployment staging/produksi, simulasi insiden manusia, atau hypercare nyata.
