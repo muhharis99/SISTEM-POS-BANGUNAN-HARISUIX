@@ -148,13 +148,13 @@ class PemeriksaKesiapanProduksi
                 $hasil,
                 'skema_tabel',
                 $jumlahTabel === self::JUMLAH_TABEL_PATEN,
-                "Jumlah base table harus ".self::JUMLAH_TABEL_PATEN.", ditemukan {$jumlahTabel}."
+                'Jumlah base table harus '.self::JUMLAH_TABEL_PATEN.", ditemukan {$jumlahTabel}."
             );
             $this->tambahkan(
                 $hasil,
                 'skema_view',
                 $jumlahView === self::JUMLAH_VIEW_PATEN,
-                "Jumlah view harus ".self::JUMLAH_VIEW_PATEN.", ditemukan {$jumlahView}."
+                'Jumlah view harus '.self::JUMLAH_VIEW_PATEN.", ditemukan {$jumlahView}."
             );
             $this->tambahkan(
                 $hasil,
