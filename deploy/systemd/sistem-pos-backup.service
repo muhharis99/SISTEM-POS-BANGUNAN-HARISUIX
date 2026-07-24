@@ -1,0 +1,23 @@
+[Unit]
+Description=Backup database Sistem POS Toko Bangunan
+Documentation=file:/var/www/sistem-pos-bangunan/current/docs/DEPLOYMENT-PRODUKSI.md
+After=network-online.target mysql.service mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/sistem-pos-bangunan/current
+UMask=0077
+ExecStart=/usr/bin/php artisan sistem:backup-database --direktori=/var/backups/sistem-pos-bangunan/database --retensi-hari=14
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
