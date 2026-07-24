@@ -1,0 +1,108 @@
+name: Laporan Bug atau Insiden
+description: Laporkan perilaku salah, error, kegagalan proses, atau insiden operasional.
+title: "[BUG] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Jangan menempelkan kata sandi, token, `.env`, backup database, data transaksi lengkap, atau tangkapan layar yang memuat data sensitif.
+  - type: dropdown
+    id: prioritas
+    attributes:
+      label: Prioritas awal
+      options:
+        - P0 - Kritis
+        - P1 - Tinggi
+        - P2 - Sedang
+        - P3 - Rendah
+    validations:
+      required: true
+  - type: dropdown
+    id: modul
+    attributes:
+      label: Modul terdampak
+      options:
+        - Autentikasi dan hak akses
+        - Master data
+        - Persediaan
+        - Pembelian dan hutang
+        - Penjualan dan piutang
+        - Pengiriman dan retur
+        - Kas, bank, dan akuntansi
+        - Dashboard dan laporan
+        - Lampiran dan audit
+        - Backup, restore, deployment, atau readiness
+        - Lainnya
+    validations:
+      required: true
+  - type: input
+    id: versi
+    attributes:
+      label: Versi atau commit
+      placeholder: v1.0.0 atau SHA commit
+    validations:
+      required: true
+  - type: input
+    id: lingkungan
+    attributes:
+      label: Lingkungan
+      placeholder: pengembangan, staging, atau produksi
+    validations:
+      required: true
+  - type: input
+    id: cabang
+    attributes:
+      label: Cabang terdampak
+      description: Gunakan kode/nama umum tanpa data pelanggan atau transaksi.
+      placeholder: Semua cabang atau CAB-XXX
+  - type: textarea
+    id: ringkasan
+    attributes:
+      label: Ringkasan masalah
+      description: Jelaskan dampak operasional secara ringkas.
+    validations:
+      required: true
+  - type: textarea
+    id: langkah
+    attributes:
+      label: Langkah reproduksi
+      placeholder: |
+        1. Masuk sebagai peran ...
+        2. Buka modul ...
+        3. Jalankan ...
+        4. Terjadi ...
+    validations:
+      required: true
+  - type: textarea
+    id: aktual
+    attributes:
+      label: Hasil aktual
+    validations:
+      required: true
+  - type: textarea
+    id: harapan
+    attributes:
+      label: Hasil yang diharapkan
+    validations:
+      required: true
+  - type: textarea
+    id: jalan_sementara
+    attributes:
+      label: Jalan sementara yang aman
+      description: Kosongkan bila tidak ada.
+  - type: textarea
+    id: bukti
+    attributes:
+      label: Bukti yang sudah disamarkan
+      description: Cantumkan potongan log atau gambar yang sudah menghapus data sensitif.
+  - type: checkboxes
+    id: keamanan
+    attributes:
+      label: Konfirmasi keamanan
+      options:
+        - label: Saya sudah memastikan issue ini tidak memuat kredensial, token, backup, `.env`, data transaksi lengkap, atau data sensitif lain.
+          required: true
+        - label: Saya sudah mencari issue duplikat.
+          required: true

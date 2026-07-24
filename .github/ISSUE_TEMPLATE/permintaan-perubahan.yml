@@ -1,0 +1,110 @@
+name: Permintaan Perubahan
+description: Ajukan penyempurnaan alur, laporan, tampilan, atau kebutuhan baru.
+title: "[PERUBAHAN] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Permintaan perubahan tidak otomatis menyetujui perubahan SQL paten, permission, atau deployment. Semua perubahan tetap mengikuti gate pemilik.
+  - type: dropdown
+    id: jenis
+    attributes:
+      label: Jenis perubahan
+      options:
+        - Perbaikan alur kerja
+        - Laporan atau ekspor
+        - Tampilan dan pengalaman pengguna
+        - Hak akses atau kebijakan operasional
+        - Integrasi
+        - Performa
+        - Dokumentasi
+        - Fitur baru
+        - Lainnya
+    validations:
+      required: true
+  - type: dropdown
+    id: modul
+    attributes:
+      label: Modul
+      options:
+        - Autentikasi dan hak akses
+        - Master data
+        - Persediaan
+        - Pembelian dan hutang
+        - Penjualan dan piutang
+        - Pengiriman dan retur
+        - Kas, bank, dan akuntansi
+        - Dashboard dan laporan
+        - Lampiran dan audit
+        - Operasional produksi
+        - Lainnya
+    validations:
+      required: true
+  - type: textarea
+    id: masalah
+    attributes:
+      label: Masalah atau kebutuhan saat ini
+      description: Jelaskan proses saat ini dan hambatan yang dialami.
+    validations:
+      required: true
+  - type: textarea
+    id: usulan
+    attributes:
+      label: Hasil yang diusulkan
+      description: Jelaskan hasil akhir, bukan hanya tampilan tombol atau field.
+    validations:
+      required: true
+  - type: textarea
+    id: manfaat
+    attributes:
+      label: Manfaat operasional
+      description: Jelaskan pengguna, cabang, volume, waktu, atau risiko yang dipengaruhi.
+    validations:
+      required: true
+  - type: dropdown
+    id: urgensi
+    attributes:
+      label: Urgensi
+      options:
+        - Tinggi - menghambat operasi utama
+        - Sedang - meningkatkan efisiensi atau akurasi
+        - Rendah - penyempurnaan bertahap
+    validations:
+      required: true
+  - type: checkboxes
+    id: dampak
+    attributes:
+      label: Potensi dampak
+      options:
+        - label: Stok atau mutasi stok
+        - label: Hutang, piutang, kas, bank, atau jurnal
+        - label: Hak akses atau isolasi cabang
+        - label: SQL paten atau struktur database
+        - label: Data sensitif, audit, atau lampiran
+        - label: Deployment, backup, restore, atau integrasi server
+  - type: textarea
+    id: penerimaan
+    attributes:
+      label: Kriteria penerimaan
+      placeholder: |
+        - Ketika ...
+        - Sistem harus ...
+        - Data cabang lain tidak boleh ...
+    validations:
+      required: true
+  - type: textarea
+    id: batasan
+    attributes:
+      label: Batasan atau hal yang tidak boleh berubah
+      description: "Contoh: SQL paten, rumus laporan, save logic, atau backend tertentu."
+  - type: checkboxes
+    id: konfirmasi
+    attributes:
+      label: Konfirmasi
+      options:
+        - label: Saya memahami perubahan belum disetujui sebelum melalui triase dan gate pemilik.
+          required: true
+        - label: Saya sudah memastikan issue tidak memuat data sensitif atau kredensial.
+          required: true

@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\PenjualanOperasionalFinalController;
+use App\Services\LayananKeuangan;
+use App\Services\LayananKeuanganFinal;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -9,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Binding service bisnis akan ditambahkan per fase.
+        $this->app->bind(PenjualanController::class, PenjualanOperasionalFinalController::class);
+        $this->app->bind(LayananKeuangan::class, LayananKeuanganFinal::class);
     }
 
     public function boot(): void

@@ -1,0 +1,133 @@
+name: Release dan Deployment Produksi
+
+on:
+  workflow_dispatch:
+    inputs:
+      versi:
+        description: Versi rilis, contoh v1.0.0
+        required: true
+        default: v1.0.0
+        type: string
+      expected_sha:
+        description: Commit SHA main yang telah lulus seluruh gate
+        required: true
+        type: string
+      jalankan_deployment:
+        description: Jalankan deployment ke environment production
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  verifikasi-dan-rilis:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout expected SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 0
+
+      - name: Verify locked commit and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ inputs.expected_sha }}"
+          test "$(cat VERSION)" = "${{ inputs.versi }}"
+          git merge-base --is-ancestor "${{ inputs.expected_sha }}" origin/main
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, zlib
+          coverage: none
+
+      - name: Verify application package
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          php scripts/salin-aset-template.php
+          find app bootstrap config database routes scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l
+          vendor/bin/pint --test
+          php artisan test
+
+      - name: Create immutable release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          git archive --format=tar.gz --output="dist/sistem-pos-bangunan-${{ inputs.versi }}.tar.gz" "${{ inputs.expected_sha }}"
+          sha256sum "dist/sistem-pos-bangunan-${{ inputs.versi }}.tar.gz" > "dist/sistem-pos-bangunan-${{ inputs.versi }}.sha256"
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/${{ inputs.versi }}" >/dev/null 2>&1; then
+            echo "Tag ${{ inputs.versi }} sudah ada; rilis tidak ditimpa."
+            exit 1
+          fi
+          git tag -a "${{ inputs.versi }}" "${{ inputs.expected_sha }}" -m "Release ${{ inputs.versi }}"
+          git push origin "refs/tags/${{ inputs.versi }}"
+          gh release create "${{ inputs.versi }}" \
+            "dist/sistem-pos-bangunan-${{ inputs.versi }}.tar.gz" \
+            "dist/sistem-pos-bangunan-${{ inputs.versi }}.sha256" \
+            --verify-tag \
+            --title "Sistem POS Bangunan ${{ inputs.versi }}" \
+            --generate-notes
+
+      - name: Configure production SSH
+        if: ${{ inputs.jalankan_deployment }}
+        shell: bash
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$PRODUCTION_HOST"
+          test -n "$PRODUCTION_USER"
+          test -n "$PRODUCTION_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$PRODUCTION_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy release archive
+        if: ${{ inputs.jalankan_deployment }}
+        shell: bash
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ secrets.PRODUCTION_PATH }}
+          PRODUCTION_DEPLOY_COMMAND: ${{ secrets.PRODUCTION_DEPLOY_COMMAND }}
+        run: |
+          set -euo pipefail
+          test -n "$PRODUCTION_PATH"
+          test -n "$PRODUCTION_DEPLOY_COMMAND"
+          scp "dist/sistem-pos-bangunan-${{ inputs.versi }}.tar.gz" "$PRODUCTION_USER@$PRODUCTION_HOST:/tmp/"
+          ssh "$PRODUCTION_USER@$PRODUCTION_HOST" \
+            "EXPECTED_SHA='${{ inputs.expected_sha }}' RELEASE_VERSION='${{ inputs.versi }}' RELEASE_ARCHIVE='/tmp/sistem-pos-bangunan-${{ inputs.versi }}.tar.gz' PRODUCTION_PATH='$PRODUCTION_PATH' bash -lc '$PRODUCTION_DEPLOY_COMMAND'"
+
+      - name: Record deployment summary
+        shell: bash
+        run: |
+          {
+            echo "## Release ${{ inputs.versi }}"
+            echo "- Expected SHA: ${{ inputs.expected_sha }}"
+            echo "- Tag dan GitHub Release: dibuat"
+            echo "- Deployment production diminta: ${{ inputs.jalankan_deployment }}"
+          } >> "$GITHUB_STEP_SUMMARY"
