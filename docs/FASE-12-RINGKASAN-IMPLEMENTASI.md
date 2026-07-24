@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTASI TEKNIS SEDANG DIKERJAKAN — BELUM LULUS.**
+**IMPLEMENTASI TEKNIS SELESAI DAN SELURUH CHECKPOINT OTOMATIS BERHASIL — BELUM LULUS MENURUT KEPUTUSAN PEMILIK.**
 
 - Branch: `fase-12-final-release-go-live-hypercare`
 - Pull request: Draft PR #15
@@ -11,21 +11,34 @@
 - Auto-merge: dilarang dan tidak digunakan
 - Deployment otomatis: tidak dilakukan
 - Tag/GitHub Release final: belum dibuat
+- Fase 13: belum dimulai
 
 ## Batasan SQL paten
 
 Fase 12 tidak menambahkan atau mengubah tabel, kolom, index, foreign key, migration bisnis, view, maupun permission bisnis.
 
-Target tetap:
+Kontrak tetap:
 
 - 71 base table;
 - 3 view paten;
 - 98 permission aktif;
 - tanpa tabel infrastruktur Laravel yang dilarang.
 
+## Kontrak rilis final
+
+`KontrakRilisFinal` memblokir paket dan go-live bila salah satu kondisi berikut menyimpang:
+
+- `VERSION` bukan `v1.0.0`;
+- jumlah base table bukan 71;
+- jumlah view bukan 3;
+- jumlah permission aktif bukan 98;
+- terdapat tabel infrastruktur Laravel yang dilarang.
+
+Kontrak ini dipakai bersama oleh pembuat paket, verifikator paket, serta gate go-live.
+
 ## Paket rilis final
 
-`PembuatPaketRilisFinal` membuat paket `.tar.gz` privat dari commit Git aktif. Paket berisi:
+`PengelolaPaketRilisFinal` membuat paket `.tar.gz` privat dari commit Git aktif. Paket berisi:
 
 - arsip sumber dari `git archive`;
 - manifest rilis final;
@@ -33,9 +46,18 @@ Target tetap:
 - release notes final;
 - daftar checksum seluruh komponen.
 
-Paket luar memiliki sidecar checksum SHA-256. Verifikator memeriksa checksum luar, keamanan path arsip, checksum komponen, format manifest, versi, skema, permission, berkas kritis, inventaris, serta daftar isi arsip sumber.
+Paket luar memiliki sidecar checksum SHA-256. Verifikator memeriksa:
 
-Berkas `.env`, backup database, log runtime, private key, vendor, node_modules, storage runtime, dan data transaksi tidak boleh masuk paket.
+- checksum paket luar;
+- keamanan path arsip;
+- checksum seluruh komponen;
+- format dan versi manifest;
+- kontrak 71 tabel, 3 view, 98 permission, dan nol tabel terlarang;
+- checksum berkas kritis;
+- kesesuaian inventaris dengan daftar isi arsip sumber;
+- checksum serta ukuran setiap berkas di dalam arsip sumber.
+
+Paket menolak `.env`, backup database, log runtime, private key, symlink, vendor, node_modules, `.git`, dan data storage runtime. Placeholder terlacak `storage/**/.gitignore` tetap diizinkan agar struktur direktori Laravel tersedia.
 
 Command:
 
@@ -48,24 +70,34 @@ php artisan sistem:verifikasi-paket-rilis-final /lokasi/paket.tar.gz
 
 `PemeriksaGoLive` memeriksa:
 
-- hasil kesiapan produksi;
-- versi final;
-- 98 permission aktif;
+- kesiapan produksi;
+- kontrak rilis final;
 - maintenance mode;
 - ruang disk;
 - backup database terbaru;
 - usia, checksum, dan keterbacaan gzip backup;
 - validitas paket rilis final.
 
-Command mendukung output JSON dan mode ketat yang memperlakukan peringatan sebagai kegagalan.
+Mode `--ketat` memperlakukan seluruh peringatan sebagai kegagalan, termasuk rekomendasi cache dari pemeriksaan produksi.
 
 ```bash
-php artisan sistem:periksa-go-live --ketat --paket=/lokasi/paket.tar.gz
+php artisan sistem:periksa-go-live \
+  --ketat \
+  --backup-direktori=/lokasi/backup \
+  --paket=/lokasi/paket.tar.gz
 ```
 
 ## Smoke test pascadeploy
 
-Smoke test memeriksa versi, maintenance mode, route utama, database, 71 tabel, 3 view, 98 permission, storage, `/up`, dan `/kesiapan`.
+Smoke test memeriksa:
+
+- versi `v1.0.0`;
+- maintenance mode;
+- route `masuk`, dashboard, Pusat Bantuan, dan readiness;
+- koneksi database;
+- 71 tabel, 3 view, dan 98 permission;
+- storage dapat ditulis;
+- HTTP 200 pada `/up` dan `/kesiapan`.
 
 ```bash
 php artisan sistem:smoke-test-pascadeploy
@@ -79,7 +111,7 @@ php artisan sistem:smoke-test-pascadeploy
 
 - memakai `flock` agar pemeriksaan tidak tumpang tindih;
 - menjalankan smoke test dan pemeriksaan go-live dalam JSON;
-- menyimpan output privat;
+- menyimpan keluaran privat;
 - membersihkan hasil yang lebih lama dari 14 hari.
 
 Contoh systemd service dan timer disediakan untuk pemeriksaan setiap 15 menit selama masa hypercare.
@@ -93,6 +125,24 @@ Contoh systemd service dan timer disediakan untuk pemeriksaan setiap 15 menit se
 - `docs/FASE-12-CHECKLIST-PENGUJIAN-MANUAL.md`;
 - `docs/FASE-12-STATUS.md`.
 
+## Hasil otomatis
+
+Seluruh 17 workflow pada head teknis `669a5c9d4b82d368874175d4868fbfa09dea9c7f` berhasil menjalankan:
+
+- sintaks Bash, PHP, dan Laravel Pint;
+- migration serta verifikasi SQL paten MySQL 8.4;
+- regresi Fase 11 dan Fase 10;
+- integration test Fase 12;
+- backup database nyata;
+- pembuatan/verifikasi paket final dan penolakan paket rusak;
+- konfigurasi produksi ketat;
+- smoke test pascadeploy;
+- gate go-live ketat;
+- pemeriksaan hypercare;
+- artifact paket final dengan retensi terbatas;
+- regresi Fase 1 sampai Fase 11 dan full suite;
+- verifikasi aset lokal serta larangan auto-merge.
+
 ## Gate
 
-Fase 12 tetap belum lulus. Draft PR #15 tidak boleh di-merge dan tag/GitHub Release final tidak boleh dibuat sampai implementasi teknis selesai, seluruh CI hijau, checklist go-live diterima, dan pemilik menyatakan eksplisit `Fase 12 lulus`.
+Fase 12 tetap belum lulus. Draft PR #15 tidak boleh di-merge dan tag/GitHub Release final tidak boleh dibuat sampai checklist go-live diterima serta pemilik menyatakan eksplisit `Fase 12 lulus`. Pengujian otomatis tidak dipresentasikan sebagai bukti bahwa deployment staging/produksi atau hypercare nyata telah dilakukan.
